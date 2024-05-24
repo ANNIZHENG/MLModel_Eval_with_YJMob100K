@@ -6,7 +6,7 @@ YJMob100K https://www.nature.com/articles/s41597-024-03237-9
 
 ### Model
 
-COLA: https://github.com/Star607/Cross-city-Mobility-Transformer
+<!-- COLA: https://github.com/Star607/Cross-city-Mobility-Transformer -->
 
 DeepMove: https://github.com/vonfeng/DeepMove?tab=readme-ov-file
 
