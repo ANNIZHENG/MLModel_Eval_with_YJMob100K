@@ -94,14 +94,14 @@ def run(args):
             ## --model_mode=attn_avg_long_user
             data_train, train_idx = generate_input_long_history(parameters.data_neural, 'train', candidate=candidate)
             data_test, test_idx = generate_input_long_history(parameters.data_neural, 'test', candidate=candidate)
-
+    
     print('users:{} markov:{} train:{} test:{}'.format(len(candidate), avg_acc_markov,
                                                        len([y for x in train_idx for y in train_idx[x]]),
                                                        len([y for x in test_idx for y in test_idx[x]])))
 
     SAVE_PATH = args.save_path
     tmp_path = 'checkpoint/'
-    os.mkdir(SAVE_PATH + tmp_path)
+    ## os.mkdir(SAVE_PATH + tmp_path)
     for epoch in range(parameters.epoch):
         st = time.time()
         if args.pretrain == 0:
@@ -113,7 +113,7 @@ def run(args):
         avg_loss, avg_acc, users_acc = run_simple(data_test, test_idx, 'test', lr, parameters.clip, model,
                                                   optimizer, criterion, parameters.model_mode)
         
-        print('==>Test Acc:{:.4f} Loss:{:.4f}'.format(avg_acc, avg_loss))
+        print('==>Test Acc:{} Loss:{}'.format(avg_acc, avg_loss))
 
         metrics['valid_loss'].append(avg_loss)
         metrics['accuracy'].append(avg_acc)
@@ -195,13 +195,14 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--loc_emb_size', type=int, default=500, help="location embeddings size")
+    parser.add_argument('--loc_emb_size', type=int, default=200+1, help="location embeddings size")
     parser.add_argument('--uid_emb_size', type=int, default=40, help="user id embeddings size")
     parser.add_argument('--voc_emb_size', type=int, default=50, help="words embeddings size")
     parser.add_argument('--tim_emb_size', type=int, default=10, help="time embeddings size")
     parser.add_argument('--hidden_size', type=int, default=500)
     parser.add_argument('--dropout_p', type=float, default=0.3)
-    parser.add_argument('--data_name', type=str, default='foursquare')
+    ## parser.add_argument('--data_name', type=str, default='foursquare')
+    parser.add_argument('--data_name', type=str, default='my_data_neural')
     parser.add_argument('--learning_rate', type=float, default=5 * 1e-4)
     parser.add_argument('--lr_step', type=int, default=2)
     parser.add_argument('--lr_decay', type=float, default=0.1)

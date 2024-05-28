@@ -29,9 +29,9 @@ class RnnParameterData(object):
         ## self.vid_list = data['vid_list']
         self.uid_list = data['uid_list']
 
-        self.tim_size = 48
+        self.tim_size = 48 ##
         ## self.loc_size = len(self.vid_list)
-        self.loc_size = 10497 ## Got it from error!
+        self.loc_size = 200+1 ## 
         self.uid_size = len(self.uid_list)
         self.loc_emb_size = loc_emb_size
         self.tim_emb_size = tim_emb_size
@@ -172,6 +172,7 @@ def generate_input_long_history(data_neural, mode, candidate=None):
     train_idx = {}
     if candidate is None:
         candidate = data_neural.keys() 
+
     for u in candidate:
         sessions = data_neural[u]['sessions']
         train_id = data_neural[u][mode] 
@@ -224,7 +225,7 @@ def generate_input_long_history(data_neural, mode, candidate=None):
 
 def generate_queue(train_idx, mode, mode2):
     """return a deque. You must use it by train_queue.popleft()"""
-    user = train_idx.keys()
+    user = list(train_idx.keys())
     train_queue = deque()
     if mode == 'random':
         initial_queue = {}

@@ -185,7 +185,6 @@ class TrajPreAttnAvgLongUser(nn.Module):
             h1 = h1.to(device)
             ## c1 = c1.cuda()
             c1 = c1.to(device)
-
         loc_emb = self.emb_loc(loc)
         tim_emb = self.emb_tim(tim)
         x = torch.cat((loc_emb, tim_emb), 2)
