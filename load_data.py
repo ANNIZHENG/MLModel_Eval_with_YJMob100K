@@ -1,12 +1,13 @@
 import gzip
 import pandas as pd
 import random
+from sklearn.model_selection import train_test_split
 
 yjmob1 = 'yjmob100k-dataset1.csv.gz' # dataset under normal scenes
 yjmob_df = pd.read_csv(yjmob1, compression='gzip')
 uids = yjmob_df['uid'].unique()
 
-rand_indicies = [random.randint(0, len(uids)) for _ in range(10000)]
+rand_indicies = [random.randint(0, len(uids)) for _ in range(10000)] # 1000
 selected_uids = [uid for uid in uids[rand_indicies]]
 df = yjmob_df[yjmob_df['uid'].isin(selected_uids)] 
 
