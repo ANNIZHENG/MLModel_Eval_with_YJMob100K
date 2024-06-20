@@ -7,7 +7,7 @@ yjmob1 = 'yjmob100k-dataset1.csv.gz' # dataset under normal scenes
 yjmob_df = pd.read_csv(yjmob1, compression='gzip')
 uids = yjmob_df['uid'].unique()
 
-rand_indicies = [random.randint(0, len(uids)) for _ in range(10000)] # 1000
+rand_indicies = [random.randint(0, len(uids)) for _ in range(1000)]
 selected_uids = [uid for uid in uids[rand_indicies]]
 df = yjmob_df[yjmob_df['uid'].isin(selected_uids)] 
 
@@ -28,5 +28,5 @@ df_train = df[df['uid'].isin(train_uids)]
 df_test = df[df['uid'].isin(test_uids)]
 
 # export data
-df_train.to_csv('df_train.csv', index=False)
-df_test.to_csv('df_test.csv', index=False)
+df_train.to_csv('df_train_1k.csv', index=False)
+df_test.to_csv('df_test_1k.csv', index=False)
