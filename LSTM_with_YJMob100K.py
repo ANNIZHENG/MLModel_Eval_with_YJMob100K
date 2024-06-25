@@ -15,7 +15,7 @@ df_test = pd.read_csv('test.csv')
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
-# For the training sesion, the former 50 data would be used to predict the latter 50 data 
+# For the training sesion, the former 48 data would be used to predict the latter 48 data 
 # Note that the training dataset would be created using a sliding window approach
 
 INPUT_WINDOW = 48
@@ -42,7 +42,7 @@ class TrajectoryTrainDataset(Dataset):
 
 train_dataset = TrajectoryTrainDataset(grouped_data_train)
 
-# For the testing sesion, the first 100 data would be used to predict the next 50 data 
+# For the testing sesion, the first 48 data would be used to predict the next 48 data 
 
 INPUT_WINDOW = 48
 PREDICT_WINDOW = 48
