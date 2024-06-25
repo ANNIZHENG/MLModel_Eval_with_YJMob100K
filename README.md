@@ -3,7 +3,7 @@
 ## Organization
 
 ```
-|-- Baselin.py                          # Baseline model
+|-- Baseline.py                          # Baseline model
 |-- CustomTransformer_with_YJMob100K.py # Created a custom Transformer for training YJMob100K data
 |-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
 |-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
