@@ -4,11 +4,12 @@
 
 ```
 |-- CustomTransformer_with_YJMob100K.py # Created a custom Transformer for training YJMob100K data
+|-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
 |-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
-|-- train.csv                           # 8K users each with 150 step data
-|-- test.csv                            # 2k users each with 150 step data
-|-- res.csv                             # Train and test performance/results of the ML models
 |-- README.md
+|-- res.csv                             # Train and test performance/results of the ML models
+|-- test.csv                            # 2k users each with 150 step data
+|-- train.csv                           # 8K users each with 150 step data
 ```
 
 ## Set up cluster training in NYU HPC
