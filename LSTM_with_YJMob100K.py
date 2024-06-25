@@ -91,18 +91,19 @@ test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, 
 print("Training and Testing datasets loaded!")
 
 class LSTMModel(nn.Module):
-    def __init__(self, loc_size, embed_dim, hidden_size, num_layers):
+    def __init__(self, loc_size, embed_dim, hidden_size, num_layers, device):
         super(LSTMModel, self).__init__()
         self.input_embedding = nn.Embedding(loc_size, embed_dim)
         self.lstm = nn.LSTM(input_size=embed_dim, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, loc_size)
         self.num_layers = num_layers
         self.hidden_size = hidden_size
+        self.device = device
 
-    def forward(self, x, device):
+    def forward(self, x):
         x = self.input_embedding(x) # positioanl embedding
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) # initialize hidden state
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) # initialize cell state
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) # initialize hidden state
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) # initialize cell state
 
         # LSTM
         out, _ = self.lstm(x, (h0, c0)) 
@@ -117,36 +118,49 @@ lstm = LSTMModel(loc_size=40000,
 
 print("PyTorch's Built-in LSTM loaded!")
 
-optimizer = optim.Adam(lstm.parameters(), lr=0.0013)
-criterion = nn.CrossEntropyLoss()
-epochs = 5
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-print("Start training process!")
-
-for epoch in range(epochs):
-    lstm.train()
-    total_loss = 0
+def train(model, dataloader, device, learning_rate):
+    model.train()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr=learning_rate)
+    
+    total_loss = 0.0
     total_correct = 0
     total_samples = 0
     
-    for inputs, labels, positions, label_positions in train_dataloader:
+    for inputs, labels in dataloader:  # Assume dataloader yields only inputs and labels
         inputs, labels = inputs.to(device), labels.to(device)
-        labels = labels.long()
         
         optimizer.zero_grad()
-        outputs = lstm(inputs, device)
+        outputs = model(inputs)
         loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
+        
         loss.backward()
         optimizer.step()
+
         total_loss += loss.item()
 
         # Calculate accuracy
-        _, predicted = outputs.max(2)
+        _, predicted = outputs.max(2) # Get the index of the max log-probability
         total_correct += (predicted == labels).sum().item()
         total_samples += labels.numel()
+    
+    avg_loss = total_loss / len(dataloader)
+    accuracy = total_correct / total_samples
+    
+    return avg_loss, accuracy
 
-    print(f"Epoch: {epoch}, Average Loss: {total_loss / len(train_dataloader)}, Accuracy: {total_correct / total_samples}")
+def train_model(model, dataloader, device, epochs, learning_rate):
+    for epoch in range(epochs):
+        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
+        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
+lstm.to(device)
+
+print("Start training process!")
+EPOCH_NUM = 5
+train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.0013)
 
 def inference(model, dataloader, device):
     model.eval()  
