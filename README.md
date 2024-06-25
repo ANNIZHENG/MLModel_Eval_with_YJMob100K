@@ -17,29 +17,31 @@
 
 1. Clone this repository
 
-`git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git`
+```
+git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
+```
 
-2. Request resourses
+2. Request resourses (4 hours, 4 cores, 1 GPU)
 
-`srun -t 4:00:00 -c 4 --mem=16000 --gres=gpu:1 --pty /bin/bash` (4 hours and 1 GPU)
+```
+srun -t 4:00:00 -c 4 --mem=16000 --gres=gpu:1 --pty /bin/bash
+```
 
 3. Load CUDA and Python3 packages
 
-3.1 Check CUDA Availability
+**Load desired CUDA package**
 
-`module spider cuda`
+```
+module spider cuda # optional; check cuda availability
+module load cuda/11.6.2
+```
 
-3.2 Load desired CUDA package
+**Check Python Availability**
 
-`module load cuda/11.6.2` (this is the newest version in my case)
-
-3.3 Check Python Availability
-
-`module spider python`
-
-3.4 Load desired Python package
-
-`module load python/intel/3.8.6` (the newest version in my case)
+```
+module spider python # optional; check python availability
+module load python/intel/3.8.6
+```
 
 4. Set-up and Activate Virtual Environment: 
 
@@ -48,9 +50,11 @@ virtualenv --system-site-packages -p python3 ./venv
 source ./venv/bin/activate
 ```
 
-5. Import PyTorch
+5. Install PyTorch
 
-`pip install torch`
+```
+pip install torch
+```
 
 6. Go into the repository and start the training
 
