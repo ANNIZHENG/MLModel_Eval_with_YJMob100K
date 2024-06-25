@@ -109,12 +109,6 @@ class LSTMModel(nn.Module):
         out, _ = self.lstm(x, (h0, c0)) 
         out = self.fc(out)
         return out
-    
-# LSTM model related param
-lstm = LSTMModel(loc_size=40000, 
-                  embed_dim=256, 
-                  hidden_size=256,
-                  num_layers=2)
 
 print("PyTorch's Built-in LSTM loaded!")
 
