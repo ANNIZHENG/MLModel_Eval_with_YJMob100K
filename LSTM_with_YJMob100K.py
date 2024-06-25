@@ -121,7 +121,7 @@ def train(model, dataloader, device, learning_rate):
     total_correct = 0
     total_samples = 0
     
-    for inputs, labels in dataloader:  # Assume dataloader yields only inputs and labels
+    for inputs, labels, _, _ in dataloader:  # Assume dataloader yields only inputs and labels
         inputs, labels = inputs.to(device), labels.to(device)
         
         optimizer.zero_grad()
@@ -162,7 +162,7 @@ def inference(model, dataloader, device):
     total_samples = 0
     
     with torch.no_grad():  
-        for inputs, labels, positions, label_positions in dataloader:
+        for inputs, labels, _, _ in dataloader:
             inputs, labels = inputs.to(device), labels.to(device)
 
             outputs = model(inputs)  
