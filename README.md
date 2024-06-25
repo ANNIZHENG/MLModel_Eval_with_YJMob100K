@@ -39,7 +39,7 @@
 
 3.4 Load desired Python package
 
-`module laod python/intel/3.8.6` (the newest version in my case)
+`module load python/intel/3.8.6` (the newest version in my case)
 
 4. Set-up and Activate Virtual Environment: 
 
