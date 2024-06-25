@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 
-# load data with 10k users from yjmob1
+# Load data with 10k users from yjmob1
 
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -87,6 +87,8 @@ BATCH_SIZE = (len(train_dataset)//len(grouped_data_train)) * 10  # around 10 use
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
+
+print("Training and Testing datasets loaded!")
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
 
@@ -262,6 +264,8 @@ class Transformer(nn.Module):
         dec_out = self.decoder(trg_seq, trg_pos, enc_out)
         return dec_out
     
+print("Custom Transformer loaded!")
+
 def train(model, dataloader, device, learning_rate):
     model.train()
     criterion = nn.CrossEntropyLoss()
@@ -299,6 +303,8 @@ def train_model(model, dataloader, device, epochs, learning_rate):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
         print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy}")
 
+print("Start training process!")
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
@@ -322,7 +328,7 @@ def inference(model, dataloader, device):
             inputs, labels = inputs.to(device), labels.to(device)
             positions, label_positions = positions.to(device), label_positions.to(device)
 
-            outputs = model(inputs, positions, None) 
+            outputs = model(inputs, positions, positions, label_positions) 
             _, predicted = outputs.max(2)
             
             total_correct += (predicted == labels).sum().item()
@@ -332,5 +338,7 @@ def inference(model, dataloader, device):
     print(f"Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy}")
 
     return accuracy
+
+print ("Start inference process!")
 
 transformer_accuracy = inference(transformer, test_dataloader, device)
