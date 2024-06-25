@@ -99,10 +99,10 @@ class LSTMModel(nn.Module):
         self.num_layers = num_layers
         self.hidden_size = hidden_size
 
-    def forward(self, x):
+    def forward(self, x, device):
         x = self.input_embedding(x) # positioanl embedding
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device) # initialize hidden state
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device) # initialize cell state
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) # initialize hidden state
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) # initialize cell state
 
         # LSTM
         out, _ = self.lstm(x, (h0, c0)) 
@@ -135,7 +135,7 @@ for epoch in range(epochs):
         labels = labels.long()
         
         optimizer.zero_grad()
-        outputs = lstm(inputs)
+        outputs = lstm(inputs, device)
         loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
         loss.backward()
         optimizer.step()
