@@ -13,7 +13,13 @@
 |-- train.csv                           # 8K users each with 150 step data
 ```
 
-## Set up cluster training in NYU HPC
+## Run Baseline
+
+```
+python Baselin.py
+```
+
+## Run LSTM & Transformer in NYU HPC
 
 0. Sign into NYU HPC: https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
 
