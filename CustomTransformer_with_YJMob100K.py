@@ -306,7 +306,7 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start training process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCH_NUM = 1
+EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
                           time_size=48,
                           embed_dim=256,
