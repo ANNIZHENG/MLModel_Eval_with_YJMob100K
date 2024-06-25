@@ -4,6 +4,7 @@
 
 ```
 |-- CustomTransformer_with_YJMob100K.py # Created a custom Transformer for training YJMob100K data
+|-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
 |-- train.csv                           # 8K users each with 150 step data
 |-- test.csv                            # 2k users each with 150 step data
 |-- res.csv                             # Train and test performance/results of the ML models
@@ -56,4 +57,5 @@ source ./venv/bin/activate
 ```
 cd MLModel_Eval_with_YJMob100K
 python CustomTransformer_with_YJMob100K.py # train and test the Transformer
+python LSTM_with_YJMob100K.py              # train and test the LSTM
 ```
