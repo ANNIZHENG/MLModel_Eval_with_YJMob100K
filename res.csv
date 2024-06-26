@@ -4,19 +4,19 @@ Transformer, 1, 0.9999,
 Transformer, 2, 0.9999,
 Transformer, 3, 0.9999,
 Transformer, 4, 0.9990,
-Transformer, N/A,0.0001, 10K users for 150 steps & 256 embed dim 8 heads
+Transformer, N/A,0.0001, 10K users for 150 steps & 48 times & 256 embed dim 8 heads
 LSTM, 0, 0.1103,
 LSTM, 1, 0.2915,
 LSTM, 2, 0.3979,
 LSTM, 3, 0.5067,
 LSTM, 4, 0.6013,
-LSTM, N/A, 0.07, 10K users for 150 steps
+LSTM, N/A, 0.07, 10K users for 150 steps & 48 times
 Transformer, 0, 0.5767,
 Transformer, 1, 0.9860, 
-Transformer, N/A, 0.0000, 10K users for all steps & 64 embed dim 4 heads
+Transformer, N/A, 0.0000, 10K users for all steps & 48 times & 64 embed dim 4 heads
 LSTM, 0, 0.0443, 
 LSTM, 1, 0.1717, 
 LSTM, 2, 0.1924, 
 LSTM, 3, 0.1999, 
 LSTM, 4, 0.2053, 
-LSTM, N/A,0.1149, 10K users for all steps
+LSTM, N/A,0.1149, 10K users for all steps & 48 times
