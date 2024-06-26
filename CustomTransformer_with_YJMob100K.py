@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
+import random
 
 # Load data with 10k users from yjmob1
 
@@ -18,8 +19,9 @@ grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 # For the training sesion, the former 48 data would be used to predict the latter 48 data 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, step_size):
+    def __init__(self, grouped_data, step_size, augment=False):
         self.data = []
+        self.augment = augment
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
@@ -34,10 +36,15 @@ class TrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         inputs, labels, positions, label_positions = self.data[idx]
-        return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
+        if self.augment:
+            noise = torch.randn_like(torch.tensor(inputs)) * 0.01 # Add random noise with mean 0 and standard deviation 0.01
+            inputs = torch.tensor(inputs) + noise
+        else:
+            inputs = torch.tensor(inputs)
+        return inputs, torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
-train_dataset = TrajectoryDataset(grouped_data_train, 48)
-test_dataset = TrajectoryDataset(grouped_data_test, 48)
+train_dataset = TrajectoryDataset(grouped_data_train, 48, augment=True)
+test_dataset = TrajectoryDataset(grouped_data_test, 48, augment=False)
 
 # clutch train and test datasets into dataloaders
 
