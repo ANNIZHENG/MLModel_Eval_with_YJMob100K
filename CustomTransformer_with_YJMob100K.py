@@ -36,6 +36,7 @@ class TrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         inputs, labels, positions, label_positions = self.data[idx]
+        inputs = torch.tensor(inputs, dtype=torch.float)
         if self.augment:
             noise = torch.randn_like(torch.tensor(inputs)) * 0.01 # Add random noise with mean 0 and standard deviation 0.01
             inputs = torch.tensor(inputs) + noise
