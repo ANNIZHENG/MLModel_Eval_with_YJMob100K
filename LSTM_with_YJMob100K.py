@@ -113,21 +113,6 @@ def train(model, dataloader, device, learning_rate):
     
     return avg_loss, accuracy
 
-def train_model(model, dataloader, device, epochs, learning_rate):
-    for epoch in range(epochs):
-        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
-
-        inference(model, test_dataloader, device) # this is here to see if model overfits
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
-lstm.to(device)
-
-print("Start training process!")
-EPOCH_NUM = 3
-train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
-
 def inference(model, dataloader, device):
     model.eval()  
     total_correct = 0
@@ -148,6 +133,20 @@ def inference(model, dataloader, device):
 
     return accuracy
 
-print ("Start inference process!")
+def train_model(model, dataloader, device, epochs, learning_rate):
+    for epoch in range(epochs):
+        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
+        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
 
+        inference(model, test_dataloader, device) # this is here to see if model overfits
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
+lstm.to(device)
+
+print("Start training process!")
+EPOCH_NUM = 3
+train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
+
+print ("Start inference process!")
 lstm_accuracy = inference(lstm, test_dataloader, device)

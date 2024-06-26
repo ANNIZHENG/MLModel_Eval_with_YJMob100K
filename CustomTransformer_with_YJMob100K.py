@@ -268,28 +268,6 @@ def train(model, dataloader, device, learning_rate):
     
     return avg_loss, accuracy
 
-def train_model(model, dataloader, device, epochs, learning_rate):
-    for epoch in range(epochs):
-        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy}")
-
-        inference(model, test_dataloader, device) # this is here to see if model overfits
-
-print("Start training process!")
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCH_NUM = 3
-transformer = Transformer(loc_size=40000, 
-                          time_size=48,
-                          embed_dim=256,
-                          num_layers=1,
-                          num_heads=8,
-                          device=device,
-                          forward_expansion=4,
-                          dropout_rate=0.3)
-transformer.to(device)
-train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
-
 def inference(model, dataloader, device):
     model.eval() 
     total_correct = 0
@@ -311,6 +289,26 @@ def inference(model, dataloader, device):
 
     return accuracy
 
-print ("Start inference process!")
+def train_model(model, dataloader, device, epochs, learning_rate):
+    for epoch in range(epochs):
+        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
+        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy}")
 
+        inference(model, test_dataloader, device) # this is here to see if model overfits
+
+print("Start training process!")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EPOCH_NUM = 3
+transformer = Transformer(loc_size=40000, 
+                          time_size=48,
+                          embed_dim=256,
+                          num_layers=1,
+                          num_heads=8,
+                          device=device,
+                          forward_expansion=4,
+                          dropout_rate=0.3)
+transformer.to(device)
+train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
+
+print ("Start inference process!")
 transformer_accuracy = inference(transformer, test_dataloader, device)
