@@ -16,18 +16,16 @@ df_test = pd.read_csv('test.csv')
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
-# For the training sesion, the former TIME_POSITION_SIZE data would be used to predict the latter TIME_POSITION_SIZE data 
-
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, step_size):
+    def __init__(self, grouped_data, input_length=96, predict_length=48):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
-            window_size = step_size * 2
-            for i in range(0, len(group) - window_size + 1, step_size):
-                input_end = i + step_size
-                predict_end = input_end + step_size
+            window_size = input_length + predict_length
+            for i in range(0, len(group) - window_size + 1, input_length):
+                input_end = i + input_length
+                predict_end = input_end + predict_length
                 self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
 
     def __len__(self):
@@ -36,11 +34,9 @@ class TrajectoryDataset(Dataset):
     def __getitem__(self, idx):
         inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
-    
-# We are going to take `TIME_POSITION_SIZE` time as input to predict `TIME_POSITION_SIZE` time
-TIME_POSITION_SIZE = 96
-train_dataset = TrajectoryDataset(grouped_data_train, TIME_POSITION_SIZE)
-test_dataset = TrajectoryDataset(grouped_data_test, TIME_POSITION_SIZE)
+
+train_dataset = TrajectoryDataset(grouped_data_train)
+test_dataset = TrajectoryDataset(grouped_data_test)
 
 # clutch train and test datasets into dataloaders
 
@@ -222,12 +218,12 @@ class Decoder(nn.Module):
         return out
     
 class Transformer(nn.Module):
-    def __init__(self, loc_size, time_size, embed_dim, num_layers, num_heads, 
+    def __init__(self, loc_size, time_size_input, time_size_output, embed_dim, num_layers, num_heads, 
                  device, forward_expansion, dropout_rate):
         super(Transformer, self).__init__()
         
-        self.encoder = Encoder(loc_size, time_size, embed_dim, num_layers, num_heads, device, forward_expansion, dropout_rate)
-        self.decoder = Decoder(loc_size, time_size, embed_dim, num_layers, num_heads, device, forward_expansion, dropout_rate)
+        self.encoder = Encoder(loc_size, time_size_input, embed_dim, num_layers, num_heads, device, forward_expansion, dropout_rate)
+        self.decoder = Decoder(loc_size, time_size_output, embed_dim, num_layers, num_heads, device, forward_expansion, dropout_rate)
         self.device = device
     
     def forward(self, src_seq, src_pos, trg_seq, trg_pos):
@@ -303,7 +299,8 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
-                          time_size=TIME_POSITION_SIZE,
+                          time_size_input=96,
+                          time_size_output=48,
                           embed_dim=64,
                           num_layers=1,
                           num_heads=4,
