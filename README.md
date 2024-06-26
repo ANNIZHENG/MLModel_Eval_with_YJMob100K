@@ -3,14 +3,13 @@
 ## Organization
 
 ```
-|-- Baseline.py                          # Baseline model
+|-- Baseline.py                         # Baseline model (haven't fixed the train-test split yet)
 |-- CustomTransformer_with_YJMob100K.py # Created a custom Transformer for training YJMob100K data
 |-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
 |-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
 |-- README.md
-|-- res.csv                             # Train and test performance/results of the ML models
-|-- test.csv                            # 2k users each with 150 step data
-|-- train.csv                           # 8K users each with 150 step data
+|-- res.csv                             # Train and test performance/results of the ML models (Old)
+|-- dataset.zip                         # contains train.csv and test.csv (10k users' trajectory data)
 ```
 
 ## Run Baseline
