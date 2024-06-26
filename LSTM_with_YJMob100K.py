@@ -129,24 +129,23 @@ def inference(model, dataloader, device):
             total_samples += labels.numel()  
 
     accuracy = total_correct / total_samples  
-    print(f"Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy:.2f}")
+    print(f"Inference: Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print("Test Result")
-        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
-        print("Inference Result after this epoch")
+        print(f"Test: Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
         inference(model, test_dataloader, device) # this is here to see if model overfits
+        print()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
 lstm.to(device)
 
 print("Start training process!")
-EPOCH_NUM = 3
+EPOCH_NUM = 5
 train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
 
 # print ("Start inference process!")

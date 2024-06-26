@@ -285,29 +285,28 @@ def inference(model, dataloader, device):
             total_samples += labels.numel()
 
     accuracy = total_correct / total_samples
-    print(f"Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy}")
+    print(f"Inference: Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print("Test Result")
-        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
-        print("Inference Result after this epoch")
+        print(f"Test: Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
         inference(model, test_dataloader, device)
+        print()
 
 print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCH_NUM = 3
+EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
                           time_size=48,
-                          embed_dim=256,
+                          embed_dim=128,
                           num_layers=1,
                           num_heads=8,
                           device=device,
                           forward_expansion=4,
-                          dropout_rate=0.3)
+                          dropout_rate=0.1)
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
