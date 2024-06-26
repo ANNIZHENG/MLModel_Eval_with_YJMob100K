@@ -8,7 +8,7 @@
 |-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
 |-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
 |-- README.md
-|-- res.csv                             # Train and test performance/results of the ML models (Old)
+|-- res.csv                             # Train and test performance/results of the ML models
 |-- dataset.zip                         # contains train.csv and test.csv (10k users' trajectory data)
 ```
 
