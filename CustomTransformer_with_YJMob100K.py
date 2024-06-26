@@ -304,7 +304,7 @@ transformer = Transformer(loc_size=40000,
                           time_size=48,
                           embed_dim=64,
                           num_layers=1,
-                          num_heads=8,
+                          num_heads=4,
                           device=device,
                           forward_expansion=4,
                           dropout_rate=0.3)
