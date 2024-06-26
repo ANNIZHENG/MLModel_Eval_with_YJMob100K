@@ -58,7 +58,7 @@ BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 
-print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing datasets loaded with batch_size being {BATCH_SIZE}!")
+print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing data loaded with batch_size being {BATCH_SIZE}!")
 
 class LSTMModel(nn.Module):
     def __init__(self, loc_size, embed_dim, hidden_size, num_layers, device):
@@ -118,13 +118,15 @@ def train_model(model, dataloader, device, epochs, learning_rate):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
         print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
 
+        inference(model, test_dataloader, device) # this is here to see if model overfits
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
 lstm.to(device)
 
 print("Start training process!")
-EPOCH_NUM = 5
-train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.0013)
+EPOCH_NUM = 3
+train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
 
 def inference(model, dataloader, device):
     model.eval()  

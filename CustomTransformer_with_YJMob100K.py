@@ -58,7 +58,7 @@ BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 
-print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing datasets loaded with batch_size being {BATCH_SIZE}!")
+print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing data loaded with batch_size being {BATCH_SIZE}!")
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
 
@@ -273,10 +273,12 @@ def train_model(model, dataloader, device, epochs, learning_rate):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
         print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy}")
 
+        inference(model, test_dataloader, device) # this is here to see if model overfits
+
 print("Start training process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCH_NUM = 5
+EPOCH_NUM = 3
 transformer = Transformer(loc_size=40000, 
                           time_size=48,
                           embed_dim=256,
@@ -286,7 +288,7 @@ transformer = Transformer(loc_size=40000,
                           forward_expansion=4,
                           dropout_rate=0.3)
 transformer.to(device)
-train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.0013)
+train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
 def inference(model, dataloader, device):
     model.eval() 
