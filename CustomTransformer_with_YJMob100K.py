@@ -284,7 +284,7 @@ transformer = Transformer(loc_size=40000,
                           num_heads=8,
                           device=device,
                           forward_expansion=4,
-                          dropout_rate=0.3)
+                          dropout_rate=0.5)
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.0013)
 
