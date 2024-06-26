@@ -16,21 +16,17 @@ grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
 # For the training sesion, the former 48 data would be used to predict the latter 48 data 
-# Note that the training dataset would be created using a sliding window approach
 
-INPUT_WINDOW = 48
-PREDICT_WINDOW = 48
-WINDOW_SIZE = INPUT_WINDOW + PREDICT_WINDOW
-
-class TrajectoryTrainDataset(Dataset):
-    def __init__(self, grouped_data):
+class TrajectoryDataset(Dataset):
+    def __init__(self, grouped_data, step_size):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
-            for i in range(len(group) - WINDOW_SIZE + 1):
-                input_end = i + INPUT_WINDOW
-                predict_end = input_end + PREDICT_WINDOW
+            window_size = step_size * 2
+            for i in range(0, len(group) - window_size + 1, step_size):
+                input_end = i + step_size
+                predict_end = input_end + step_size
                 self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
 
     def __len__(self):
@@ -40,34 +36,8 @@ class TrajectoryTrainDataset(Dataset):
         inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
-train_dataset = TrajectoryTrainDataset(grouped_data_train)
-
-# For the testing sesion, the first 48 data would be used to predict the next 48 data 
-
-INPUT_WINDOW = 48
-PREDICT_WINDOW = 48
-
-class TrajectoryTestDataset(Dataset):
-    def __init__(self, grouped_data):
-        self.data = []
-        for group in grouped_data:
-            if len(group) >= (INPUT_WINDOW + PREDICT_WINDOW):
-                xy = group['combined_xy'].values.tolist()
-                t = group['t'].values.tolist()
-                inputs = xy[:INPUT_WINDOW]
-                labels = xy[INPUT_WINDOW: (INPUT_WINDOW + PREDICT_WINDOW)]
-                input_times = t[:INPUT_WINDOW]
-                label_times = t[INPUT_WINDOW: (INPUT_WINDOW + PREDICT_WINDOW)]
-                self.data.append((inputs, labels, input_times, label_times))
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        inputs, labels, positions, label_positions = self.data[idx]
-        return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
-
-test_dataset = TrajectoryTestDataset(grouped_data_test)
+train_dataset = TrajectoryDataset(grouped_data_train, 48)
+test_dataset = TrajectoryDataset(grouped_data_test, 48)
 
 # clutch train and test datasets into dataloaders
 
@@ -83,12 +53,12 @@ def collate_fn(batch):
     
     return inputs_padded, labels_padded, positions_padded, label_positions_padded
 
-BATCH_SIZE = (len(train_dataset)//len(grouped_data_train)) * 10  # around 10 users in a batch
+BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 
-print("Training and Testing datasets loaded!")
+print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing datasets loaded with batch_size being {BATCH_SIZE}!")
 
 class LSTMModel(nn.Module):
     def __init__(self, loc_size, embed_dim, hidden_size, num_layers, device):
