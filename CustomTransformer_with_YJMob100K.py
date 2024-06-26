@@ -301,12 +301,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
                           time_size=48,
-                          embed_dim=128,
+                          embed_dim=64,
                           num_layers=1,
                           num_heads=8,
                           device=device,
                           forward_expansion=4,
-                          dropout_rate=0.1)
+                          dropout_rate=0.3)
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
