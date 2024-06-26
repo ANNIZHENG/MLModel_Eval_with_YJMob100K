@@ -17,7 +17,7 @@ grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, input_length=96, predict_length=48):
+    def __init__(self, grouped_data, input_length=240, predict_length=48):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
