@@ -16,7 +16,7 @@ df_test = pd.read_csv('test.csv')
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
-# For the training sesion, the former 48 data would be used to predict the latter 48 data 
+# For the training sesion, the former TIME_POSITION_SIZE data would be used to predict the latter TIME_POSITION_SIZE data 
 
 class TrajectoryDataset(Dataset):
     def __init__(self, grouped_data, step_size):
@@ -36,9 +36,11 @@ class TrajectoryDataset(Dataset):
     def __getitem__(self, idx):
         inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
-
-train_dataset = TrajectoryDataset(grouped_data_train, 48)
-test_dataset = TrajectoryDataset(grouped_data_test, 48)
+    
+# We are going to take `TIME_POSITION_SIZE` time as input to predict `TIME_POSITION_SIZE` time
+TIME_POSITION_SIZE = 96
+train_dataset = TrajectoryDataset(grouped_data_train, TIME_POSITION_SIZE)
+test_dataset = TrajectoryDataset(grouped_data_test, TIME_POSITION_SIZE)
 
 # clutch train and test datasets into dataloaders
 
@@ -301,7 +303,7 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
-                          time_size=48,
+                          time_size=TIME_POSITION_SIZE,
                           embed_dim=64,
                           num_layers=1,
                           num_heads=4,
