@@ -292,9 +292,10 @@ def inference(model, dataloader, device):
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy}")
-
-        inference(model, test_dataloader, device) # this is here to see if model overfits
+        print("Test Result")
+        print(f"Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
+        print("Inference Result after this epoch")
+        inference(model, test_dataloader, device)
 
 print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -310,5 +311,5 @@ transformer = Transformer(loc_size=40000,
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
-print ("Start inference process!")
-transformer_accuracy = inference(transformer, test_dataloader, device)
+# print ("Start inference process!")
+# transformer_accuracy = inference(transformer, test_dataloader, device)
