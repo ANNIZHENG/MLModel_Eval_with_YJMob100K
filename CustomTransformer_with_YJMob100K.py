@@ -16,8 +16,13 @@ df_test = pd.read_csv('test.csv')
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
+# adjust input and predict size here
+# not stable yet, plz don't touch
+input_size = 48
+output_size = 48
+
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, input_length=240, predict_length=48):
+    def __init__(self, grouped_data, input_length=48, predict_length=48):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
@@ -299,8 +304,8 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 5
 transformer = Transformer(loc_size=40000, 
-                          time_size_input=240,
-                          time_size_output=48,
+                          time_size_input=input_size,
+                          time_size_output=output_size,
                           embed_dim=64,
                           num_layers=1,
                           num_heads=4,
