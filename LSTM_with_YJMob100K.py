@@ -81,16 +81,40 @@ class LSTMModel(nn.Module):
 
 print("PyTorch's Built-in LSTM loaded!")
 
+def location_id_dist(loc1, loc2):
+    return 0 if loc1 == loc2 else 1
+
+def dtw_distance_ids(traj1, traj2):
+    n, m = len(traj1), len(traj2)
+    cost_matrix = np.zeros((n, m))
+
+    # Initialize the cost matrix
+    cost_matrix[0, 0] = location_id_dist(traj1[0], traj2[0])
+    for i in range(1, n):
+        cost_matrix[i, 0] = cost_matrix[i-1, 0] + location_id_dist(traj1[i], traj2[0])
+    for j in range(1, m):
+        cost_matrix[0, j] = cost_matrix[0, j-1] + location_id_dist(traj1[0], traj2[j])
+    for i in range(1, n):
+        for j in range(1, m):
+            cost = location_id_dist(traj1[i], traj2[j])
+            cost_matrix[i, j] = cost + min(cost_matrix[i-1, j],   # insertion
+                                          cost_matrix[i, j-1],    # deletion
+                                          cost_matrix[i-1, j-1])  # match
+    dtw_distance = cost_matrix[-1, -1]
+    return dtw_distance
+
 def train(model, dataloader, device, learning_rate):
     model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learning_rate)
     
     total_loss = 0.0
-    total_correct = 0
-    total_samples = 0
+    total_dtw_distance = 0.0
+    total_trajectories = 0
+    # total_correct = 0
+    # total_samples = 0
     
-    for inputs, labels, _, _ in dataloader:  # Assume dataloader yields only inputs and labels
+    for inputs, labels, _, _ in dataloader: 
         inputs, labels = inputs.to(device), labels.to(device)
         
         optimizer.zero_grad()
@@ -102,20 +126,33 @@ def train(model, dataloader, device, learning_rate):
 
         total_loss += loss.item()
 
-        # Calculate accuracy
-        _, predicted = outputs.max(2) # Get the index of the max log-probability
-        total_correct += (predicted == labels).sum().item()
-        total_samples += labels.numel()
+        # Get the index of the max log-probability
+        _, predicted = outputs.max(2)
+
+        # Iterate over the batch
+        for i in range(labels.size(0)):
+            true_traj = labels[i].cpu().numpy()
+            pred_traj = predicted[i].cpu().numpy()
+            dtw_distance = dtw_distance_ids(true_traj, pred_traj)
+            total_dtw_distance += dtw_distance # add to the total dtw distince
+            total_trajectories += 1 # calculate how many trajectory are being predicted
+            # total_correct += (predicted == labels).sum().item()
+            # total_samples += labels.numel()
     
+    # Calculate accuracy
     avg_loss = total_loss / len(dataloader)
-    accuracy = total_correct / total_samples
+    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
+    accuracy = 1 - avg_dtw_distance # 1 - difference in distance = accuracy
+    # accuracy = total_correct / total_samples
     
     return avg_loss, accuracy
 
 def inference(model, dataloader, device):
     model.eval()  
-    total_correct = 0
-    total_samples = 0
+    total_dtw_distance = 0.0
+    total_trajectories = 0
+    # total_correct = 0
+    # total_samples = 0
     
     with torch.no_grad():  
         for inputs, labels, _, _ in dataloader:
@@ -124,11 +161,21 @@ def inference(model, dataloader, device):
             outputs = model(inputs)  
             _, predicted = outputs.max(2)  
             
-            total_correct += (predicted == labels).sum().item()  
-            total_samples += labels.numel()  
+            for i in range(labels.size(0)):
+                true_traj = labels[i].cpu().numpy()
+                pred_traj = predicted[i].cpu().numpy()
+                dtw_distance = dtw_distance_ids(true_traj, pred_traj)
+                total_dtw_distance += dtw_distance # add to the total dtw distince
+                total_trajectories += 1 # calculate how many trajectory are being predicted
+            
+            # total_correct += (predicted == labels).sum().item()
+            # total_samples += labels.numel()
 
-    accuracy = total_correct / total_samples  
-    print(f"Inference: Total Correct: {total_correct}, Total Samples: {total_samples}, Accuracy: {accuracy:.4f}")
+    # accuracy = total_correct / total_samples
+    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
+    accuracy = 1 - avg_dtw_distance # 1 - difference in distance = accuracy
+
+    print(f"Inference: Total DTW Distance: {total_dtw_distance}, Total Samples: {total_trajectories}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
