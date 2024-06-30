@@ -6,27 +6,28 @@ from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 
 # Load data with 10k users from yjmob1
-
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
 
 # Group data by uid
-
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
-# For the training sesion, the former 48 data would be used to predict the latter 48 data 
+# adjust input and predict size here
+# not stable yet, plz don't touch
+input_size = 50
+output_size = 50
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, step_size):
+    def __init__(self, grouped_data, input_size, predict_size):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
-            window_size = step_size * 2
-            for i in range(0, len(group) - window_size + 1, step_size):
-                input_end = i + step_size
-                predict_end = input_end + step_size
+            window_size = input_size + predict_size
+            for i in range(0, len(group) - window_size + 1, input_size):
+                input_end = i + input_size
+                predict_end = input_end + predict_size
                 self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
 
     def __len__(self):
@@ -36,8 +37,8 @@ class TrajectoryDataset(Dataset):
         inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
-train_dataset = TrajectoryDataset(grouped_data_train, 48)
-test_dataset = TrajectoryDataset(grouped_data_test, 48)
+train_dataset = TrajectoryDataset(grouped_data_train, input_size, output_size)
+test_dataset = TrajectoryDataset(grouped_data_test, input_size, output_size)
 
 # clutch train and test datasets into dataloaders
 
@@ -53,7 +54,7 @@ def collate_fn(batch):
     
     return inputs_padded, labels_padded, positions_padded, label_positions_padded
 
-BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
+BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
@@ -74,8 +75,6 @@ class LSTMModel(nn.Module):
         x = self.input_embedding(x) # positioanl embedding
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) # initialize hidden state
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) # initialize cell state
-
-        # LSTM
         out, _ = self.lstm(x, (h0, c0)) 
         out = self.fc(out)
         return out
@@ -141,7 +140,7 @@ def train_model(model, dataloader, device, epochs, learning_rate):
         print()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-lstm = LSTMModel(loc_size=40000, embed_dim=256, hidden_size=256, num_layers=2, device=device)
+lstm = LSTMModel(loc_size=40000, embed_dim=128, hidden_size=128, num_layers=2, device=device)
 lstm.to(device)
 
 print("Start training process!")

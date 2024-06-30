@@ -7,30 +7,28 @@ from torch.utils.data import Dataset, DataLoader
 import random
 
 # Load data with 10k users from yjmob1
-
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
 
 # Group data by uid
-
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
 grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
 # adjust input and predict size here
 # not stable yet, plz don't touch
-input_size = 48
-output_size = 48
+input_size = 50
+output_size = 50
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, grouped_data, input_length=48, predict_length=48):
+    def __init__(self, grouped_data, input_size, predict_size):
         self.data = []
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
-            window_size = input_length + predict_length
-            for i in range(0, len(group) - window_size + 1, input_length):
-                input_end = i + input_length
-                predict_end = input_end + predict_length
+            window_size = input_size + predict_size
+            for i in range(0, len(group) - window_size + 1, input_size):
+                input_end = i + input_size
+                predict_end = input_end + predict_size
                 self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
 
     def __len__(self):
@@ -40,8 +38,8 @@ class TrajectoryDataset(Dataset):
         inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
-train_dataset = TrajectoryDataset(grouped_data_train)
-test_dataset = TrajectoryDataset(grouped_data_test)
+train_dataset = TrajectoryDataset(grouped_data_train, input_size, output_size)
+test_dataset = TrajectoryDataset(grouped_data_test, input_size, output_size)
 
 # clutch train and test datasets into dataloaders
 
@@ -57,7 +55,7 @@ def collate_fn(batch):
     
     return inputs_padded, labels_padded, positions_padded, label_positions_padded
 
-BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
+BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
@@ -65,7 +63,6 @@ test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, 
 print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing data loaded with batch_size being {BATCH_SIZE}!")
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
-
 class PositionalEncoding(nn.Module):
     def __init__(self, max_len, embedding_dim):
         super(PositionalEncoding, self).__init__()
@@ -315,5 +312,5 @@ transformer = Transformer(loc_size=40000,
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
-# print ("Start inference process!")
-# transformer_accuracy = inference(transformer, test_dataloader, device)
+print ("Start inference process!")
+transformer_accuracy = inference(transformer, test_dataloader, device)
