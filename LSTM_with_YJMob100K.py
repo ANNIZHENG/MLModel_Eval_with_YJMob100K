@@ -173,7 +173,7 @@ def inference(model, dataloader, device):
 
     # accuracy = total_correct / total_samples
     avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
-    accuracy = 1 - avg_dtw_distance # 1 - difference in distance = accuracy
+    accuracy = abs(1 - avg_dtw_distance) # 1 - difference in distance = accuracy
 
     print(f"Inference: Total DTW Distance: {total_dtw_distance}, Total Samples: {total_trajectories}, Accuracy: {accuracy:.4f}")
 
@@ -191,7 +191,7 @@ lstm = LSTMModel(loc_size=40000, embed_dim=128, hidden_size=128, num_layers=2, d
 lstm.to(device)
 
 print("Start training process!")
-EPOCH_NUM = 5
+EPOCH_NUM = 3
 train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
 
 # print ("Start inference process!")

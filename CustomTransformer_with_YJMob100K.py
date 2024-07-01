@@ -331,7 +331,7 @@ def inference(model, dataloader, device):
 
     # accuracy = total_correct / total_samples
     avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
-    accuracy = 1 - avg_dtw_distance # 1 - difference in distance = accuracy
+    accuracy = abs(1 - avg_dtw_distance) # 1 - difference in distance = accuracy
 
     print(f"Inference: Total DTW Distance: {total_dtw_distance}, Total Samples: {total_trajectories}, Accuracy: {accuracy:.4f}")
 
@@ -346,7 +346,7 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 
 print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCH_NUM = 5
+EPOCH_NUM = 3
 transformer = Transformer(loc_size=40000, 
                           time_size_input=input_size,
                           time_size_output=output_size,
