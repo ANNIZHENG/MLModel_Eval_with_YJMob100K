@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
-import random
+from dtaidistance import dtw
 
 # Load data with 10k users from yjmob1
 df_train = pd.read_csv('train.csv')
@@ -237,29 +237,16 @@ class Transformer(nn.Module):
     
 print("Custom Transformer loaded!")
 
-def location_id_dist(loc1, loc2):
-    return 0 if loc1 == loc2 else 1
+def decode_token_to_cell(token_id, num_cells_per_row):
+    cell_x = (token_id % num_cells_per_row) + 1
+    cell_y = (token_id // num_cells_per_row) + 1
+    return cell_x, cell_y
 
-def dtw_distance_ids(traj1, traj2):
-    n, m = len(traj1), len(traj2)
-    cost_matrix = np.zeros((n, m))
+def decode_trajectory(traj, num_cells_per_row=200):
+    decoded_traj = [decode_token_to_cell(token_id, num_cells_per_row) for token_id in traj]
+    return decoded_traj
 
-    # Initialize the cost matrix
-    cost_matrix[0, 0] = location_id_dist(traj1[0], traj2[0])
-    for i in range(1, n):
-        cost_matrix[i, 0] = cost_matrix[i-1, 0] + location_id_dist(traj1[i], traj2[0])
-    for j in range(1, m):
-        cost_matrix[0, j] = cost_matrix[0, j-1] + location_id_dist(traj1[0], traj2[j])
-    for i in range(1, n):
-        for j in range(1, m):
-            cost = location_id_dist(traj1[i], traj2[j])
-            cost_matrix[i, j] = cost + min(cost_matrix[i-1, j],   # insertion
-                                          cost_matrix[i, j-1],    # deletion
-                                          cost_matrix[i-1, j-1])  # match
-    dtw_distance = cost_matrix[-1, -1]
-    return dtw_distance
-
-def train(model, dataloader, device, learning_rate):
+def train(model, dataloader, device, learning_rate, dtw_threshold=1.0):
     model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learning_rate)
@@ -267,8 +254,7 @@ def train(model, dataloader, device, learning_rate):
     total_loss = 0.0
     total_dtw_distance = 0.0
     total_trajectories = 0
-    # total_correct = 0
-    # total_samples = 0
+    correct_trajectories = 0
     
     for inputs, labels, positions, label_positions in dataloader:
         inputs, labels = inputs.to(device), labels.to(device)
@@ -288,28 +274,39 @@ def train(model, dataloader, device, learning_rate):
 
         # Iterate over the batch
         for i in range(labels.size(0)):
+            # Retrieve true trajectory and predicted trajectory
             true_traj = labels[i].cpu().numpy()
             pred_traj = predicted[i].cpu().numpy()
-            dtw_distance = dtw_distance_ids(true_traj, pred_traj)
-            total_dtw_distance += dtw_distance # add to the total dtw distince
-            total_trajectories += 1 # calculate how many trajectory are being predicted
-            # total_correct += (predicted == labels).sum().item()
-            # total_samples += labels.numel()
-    
-    # Calculate accuracy
-    avg_loss = total_loss / len(dataloader)
-    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
-    accuracy = 1 - avg_dtw_distance # 1 - difference in distance = accuracy
-    # accuracy = total_correct / total_samples
-    
-    return avg_loss, accuracy
 
-def inference(model, dataloader, device):
+            # Decode true trajectory and predicted trajectory
+            decoded_true_traj = np.array(decode_trajectory(true_traj))
+            decoded_pred_traj = np.array(decode_trajectory(pred_traj))
+
+            # DTW Calcualtion
+            dtw_distance = dtw.distance(decoded_true_traj, decoded_pred_traj)
+            total_dtw_distance += dtw_distance
+            total_trajectories += 1
+
+            # Apply threshold
+            if dtw_distance <= dtw_threshold:
+                correct_trajectories += 1
+    
+    # Calculate loss
+    avg_loss = total_loss / len(dataloader)
+
+    # Calculate accuracy
+    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
+    accuracy = correct_trajectories / total_trajectories
+
+    print(f"Average DTW Distance: {avg_dtw_distance}, Accuracy: {accuracy:.4f}") 
+    
+    return avg_loss, avg_dtw_distance, accuracy
+
+def inference(model, dataloader, device, dtw_threshold=1.0):
     model.eval() 
     total_dtw_distance = 0.0
     total_trajectories = 0
-    # total_correct = 0
-    # total_samples = 0
+    correct_trajectories = 0
     
     with torch.no_grad():  
         for inputs, labels, positions, label_positions in dataloader:
@@ -317,30 +314,41 @@ def inference(model, dataloader, device):
             positions, label_positions = positions.to(device), label_positions.to(device)
 
             outputs = model(inputs, positions, positions, label_positions) 
+
+            # Get the index of the max log-probability
             _, predicted = outputs.max(2)
 
+            # Iterate over the batch
             for i in range(labels.size(0)):
                 true_traj = labels[i].cpu().numpy()
                 pred_traj = predicted[i].cpu().numpy()
-                dtw_distance = dtw_distance_ids(true_traj, pred_traj)
-                total_dtw_distance += dtw_distance # add to the total dtw distince
-                total_trajectories += 1 # calculate how many trajectory are being predicted
-            
-            # total_correct += (predicted == labels).sum().item()
-            # total_samples += labels.numel()
 
-    # accuracy = total_correct / total_samples
+                # Decode true trajectory and predicted trajectory
+                decoded_true_traj = np.array(decode_trajectory(true_traj))
+                decoded_pred_traj = np.array(decode_trajectory(pred_traj))
+
+                # DTW Calcualtion
+                dtw_distance = dtw.distance(decoded_true_traj, decoded_pred_traj)
+                total_dtw_distance += dtw_distance
+                total_trajectories += 1
+
+                # Apply threshold
+                if dtw_distance <= dtw_threshold:
+                    correct_trajectories += 1
+
+    # Calculate accuracy
     avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
-    accuracy = abs(1 - avg_dtw_distance) # 1 - difference in distance = accuracy
+    accuracy = correct_trajectories / total_trajectories
 
-    print(f"Inference: Total DTW Distance: {total_dtw_distance}, Total Samples: {total_trajectories}, Accuracy: {accuracy:.4f}")
+    print(f"Average DTW Distance: {avg_dtw_distance}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
-        avg_loss, accuracy = train(model, dataloader, device, learning_rate)
-        print(f"Test: Epoch {epoch}, Average Loss: {avg_loss}, Accuracy: {accuracy:.4f}")
+        print(f"Test: Epoch {epoch}")
+        train(model, dataloader, device, learning_rate)
+        print("Inference")
         inference(model, test_dataloader, device)
         print()
 
