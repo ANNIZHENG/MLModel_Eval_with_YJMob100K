@@ -55,7 +55,7 @@ def collate_fn(batch):
     
     return inputs_padded, labels_padded, positions_padded, label_positions_padded
 
-BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))
+BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
@@ -99,7 +99,7 @@ class MultiHeadAttentionModule(nn.Module):
         value = value.transpose(0, 1)
         
         # Apply multihead attention
-        attn_output, attn_output_weights = self.multihead_attn(query, key, value, attn_mask=attn_mask)
+        attn_output, _ = self.multihead_attn(query, key, value, attn_mask=attn_mask)
         attn_output = self.dropout(attn_output)
         return attn_output.transpose(0, 1)
     

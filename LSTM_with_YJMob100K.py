@@ -54,7 +54,7 @@ def collate_fn(batch):
     
     return inputs_padded, labels_padded, positions_padded, label_positions_padded
 
-BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))
+BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
