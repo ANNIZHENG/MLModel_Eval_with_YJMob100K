@@ -61,6 +61,7 @@ source ./venv/bin/activate
 
 ```
 pip install torch
+pip install dtaidistance
 ```
 
 6. Go into the repository and start the training
