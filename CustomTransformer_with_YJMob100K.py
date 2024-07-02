@@ -297,7 +297,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}") 
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}") 
     
     return avg_loss, avg_euclidean_distance, accuracy
 
