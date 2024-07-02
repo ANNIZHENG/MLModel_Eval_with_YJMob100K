@@ -55,7 +55,7 @@ virtualenv --system-site-packages -p python3 ./venv
 source ./venv/bin/activate
 ```
 
-5. Install PyTorch
+5. Install PyTorch (If not already)
 
 ```
 pip install torch
