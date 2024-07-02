@@ -1,23 +1,22 @@
 import pandas as pd
 import numpy as np
+import math
 import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
-from dtaidistance import dtw
 
 # Load data with 10k users from yjmob1
 df_train = pd.read_csv('train.csv')
-df_test = pd.read_csv('test.csv')
+## df_test = pd.read_csv('test.csv')
 
 # Group data by uid
 grouped_data_train = [group for _, group in df_train.groupby('uid')]
-grouped_data_test  = [group for _, group in df_test.groupby('uid')]
+## grouped_data_test  = [group for _, group in df_test.groupby('uid')]
 
-# adjust input and predict size here
-# not stable yet, plz don't touch
-input_size = 50
-output_size = 50
+# Adjust input and predict size here
+input_size = math.floor(584 * 0.8)
+output_size = math.ceil(584 * 0.2)
 
 class TrajectoryDataset(Dataset):
     def __init__(self, grouped_data, input_size, predict_size):
@@ -25,11 +24,12 @@ class TrajectoryDataset(Dataset):
         for group in grouped_data:
             xy = group['combined_xy'].values.tolist()
             t = group['t'].values.tolist()
-            window_size = input_size + predict_size
-            for i in range(0, len(group) - window_size + 1, input_size):
-                input_end = i + input_size
-                predict_end = input_end + predict_size
-                self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
+            self.data.append((xy[0:input_size], xy[input_size:(input_size+predict_size)], t[0:input_size], t[input_size:(input_size+predict_size)]))
+            # window_size = input_size + predict_size
+            # for i in range(0, len(group) - window_size + 1, input_size):
+            #     input_end = i + input_size
+            #     predict_end = input_end + predict_size
+            #     self.data.append((xy[i:input_end], xy[input_end:predict_end], t[i:input_end], t[input_end:predict_end]))
 
     def __len__(self):
         return len(self.data)
@@ -39,10 +39,9 @@ class TrajectoryDataset(Dataset):
         return torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
 train_dataset = TrajectoryDataset(grouped_data_train, input_size, output_size)
-test_dataset = TrajectoryDataset(grouped_data_test, input_size, output_size)
+## test_dataset = TrajectoryDataset(grouped_data_test, input_size, output_size)
 
-# clutch train and test datasets into dataloaders
-
+# Clutch train and test datasets into dataloaders
 def collate_fn(batch):
     # Unzip all batch
     inputs_batch, labels_batch, positions_batch, label_positions_batch = zip(*batch)
@@ -58,9 +57,9 @@ def collate_fn(batch):
 BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
-test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
+# test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 
-print(f"{len(train_dataset)} Training and {len(test_dataset)} Testing data loaded with batch_size being {BATCH_SIZE}!")
+print(f"{len(train_dataset)} Training loaded with batch_size being {BATCH_SIZE}!") # and {len(test_dataset)} Testing data 
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
 class PositionalEncoding(nn.Module):
@@ -246,13 +245,13 @@ def decode_trajectory(traj, num_cells_per_row=200):
     decoded_traj = [decode_token_to_cell(token_id, num_cells_per_row) for token_id in traj]
     return decoded_traj
 
-def train(model, dataloader, device, learning_rate, dtw_threshold=1.0):
+def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learning_rate)
     
     total_loss = 0.0
-    total_dtw_distance = 0.0
+    total_distance = 0.0
     total_trajectories = 0
     correct_trajectories = 0
     
@@ -282,29 +281,29 @@ def train(model, dataloader, device, learning_rate, dtw_threshold=1.0):
             decoded_true_traj = np.array(decode_trajectory(true_traj))
             decoded_pred_traj = np.array(decode_trajectory(pred_traj))
 
-            # DTW Calcualtion
-            dtw_distance = dtw.distance(decoded_true_traj, decoded_pred_traj)
-            total_dtw_distance += dtw_distance
+            # Euclidean Distance Calcualtion
+            euclidean_distances = np.linalg.norm(decoded_true_traj - decoded_pred_traj, axis=1)
+            total_distance += np.sum(euclidean_distances)
             total_trajectories += 1
 
             # Apply threshold
-            if dtw_distance <= dtw_threshold:
+            if np.sum(euclidean_distances) <= threshold:
                 correct_trajectories += 1
     
     # Calculate loss
     avg_loss = total_loss / len(dataloader)
 
     # Calculate accuracy
-    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
+    avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average DTW Distance: {avg_dtw_distance}, Accuracy: {accuracy:.4f}") 
+    print(f"Average Euclidean Distance: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}") 
     
-    return avg_loss, avg_dtw_distance, accuracy
+    return avg_loss, avg_euclidean_distance, accuracy
 
-def inference(model, dataloader, device, dtw_threshold=1.0):
+def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
     model.eval() 
-    total_dtw_distance = 0.0
+    total_distance = 0.0
     total_trajectories = 0
     correct_trajectories = 0
     
@@ -327,20 +326,20 @@ def inference(model, dataloader, device, dtw_threshold=1.0):
                 decoded_true_traj = np.array(decode_trajectory(true_traj))
                 decoded_pred_traj = np.array(decode_trajectory(pred_traj))
 
-                # DTW Calcualtion
-                dtw_distance = dtw.distance(decoded_true_traj, decoded_pred_traj)
-                total_dtw_distance += dtw_distance
+                # Euclidean Distance Calcualtion
+                euclidean_distances = np.linalg.norm(decoded_true_traj - decoded_pred_traj, axis=1)
+                total_distance += np.sum(euclidean_distances)
                 total_trajectories += 1
 
                 # Apply threshold
-                if dtw_distance <= dtw_threshold:
+                if euclidean_distances <= threshold:
                     correct_trajectories += 1
 
     # Calculate accuracy
-    avg_dtw_distance = total_dtw_distance / total_trajectories # normalized difference in distance
+    avg_euclidean_distance = total_distance / total_trajectories 
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average DTW Distance: {avg_dtw_distance}, Accuracy: {accuracy:.4f}")
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
@@ -348,8 +347,8 @@ def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         print(f"Test: Epoch {epoch}")
         train(model, dataloader, device, learning_rate)
-        print("Inference")
-        inference(model, test_dataloader, device)
+        ## print("Inference")
+        ## inference(model, test_dataloader, device)
         print()
 
 print("Start training process!")
@@ -366,6 +365,3 @@ transformer = Transformer(loc_size=40000,
                           dropout_rate=0.1)
 transformer.to(device)
 train_model(transformer, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
-
-print ("Start inference process!")
-transformer_accuracy = inference(transformer, test_dataloader, device)
