@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 
-# Load data with 10k users from yjmob1
+# Load data with users from yjmob1
 df_train = pd.read_csv('train.csv')
 ## df_test = pd.read_csv('test.csv')
 
@@ -297,7 +297,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}") 
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}") 
     
     return avg_loss, avg_euclidean_distance, accuracy
 
@@ -339,13 +339,13 @@ def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
     avg_euclidean_distance = total_distance / total_trajectories 
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance}, Accuracy: {accuracy:.4f}")
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
 
     return accuracy
 
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
-        print(f"Test: Epoch {epoch}")
+        print(f"Test: Epoch {epoch+1}")
         train(model, dataloader, device, learning_rate)
         ## print("Inference")
         ## inference(model, test_dataloader, device)
