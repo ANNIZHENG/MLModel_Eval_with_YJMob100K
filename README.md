@@ -68,4 +68,5 @@ pip install dtaidistance
 cd MLModel_Eval_with_YJMob100K
 python CustomTransformer_with_YJMob100K.py # train and test the Transformer
 python LSTM_with_YJMob100K.py              # train and test the LSTM
+python Baseline.py                         # test the Baseline model
 ```
