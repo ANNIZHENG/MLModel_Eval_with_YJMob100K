@@ -1,7 +1,6 @@
 import pandas as pd
+import numpy as np
 import math
-from collections import Counter
-from scipy.spatial import cKDTree
 
 # Load Data
 df_test = pd.read_csv('train.csv')
@@ -13,43 +12,52 @@ user_modes = {}
 accurate_count = 0
 total_euclidean_distance = 0
 total_trajectory = 0
+
+# Baseline Model
 for uid, uid_group in df_test.groupby('uid'):
+    total_trajectory += 1
     train_data = uid_group.iloc[:input_size]
     test_data = uid_group.iloc[input_size:(input_size+output_size)]
 
-    # Calculating mode for each t in train_data
-    modes = {}
+    mode = {}
+    time_recorded_for_mode = set()
+
     for t, group in train_data.groupby('t'):
-        most_common = Counter(group[['x', 'y']].apply(tuple, axis=1)).most_common(1)
-        modes[t] = most_common[0][0] if most_common else None
+        x,y = group.value_counts(['x', 'y']).index[0]
+        mode[t] = (x,y)
+        time_recorded_for_mode.add(t)
 
-    # Storing the modes by user and time slot
-    user_modes[uid] = modes
+    for i in range(len(test_data)):
+        test_data_row = test_data.iloc[i]
+        time = test_data_row['t']
+        prediction = mode.get(time)
+        x1,y1 = -1,-1
 
-    # Make a K-D Tree for mode
-    mode_times = list(modes.keys())
-    mode_tree = cKDTree([[t] for t in mode_times])
-
-    # Determine if mode exist for that time
-    for _, row in test_data.iterrows():
-        t = row['t']
-        actual_location = (row['x'],row['y'])
-        predicted_location = (-1,-1)
-        if t in modes and modes[t]:
-            predicted_location = modes[t]
+        if prediction is None:
+            found = False
+            if i > 0:
+                for j in range(i-1, -1, -1):
+                    prev_time = test_data.iloc[j]['t']
+                    if prev_time in mode:
+                        x1, y1 = mode[prev_time]
+                        found = True
+                        break
+            if not found:
+                for j in range(i+1, len(test_data)):
+                    next_time = test_data.iloc[j]['t']
+                    if next_time in mode:
+                        x1, y1 = mode[next_time]
+                        found = True
+                        break
+            if not found:
+                x1, y1 = 0, 0
         else:
-            # Find the nearest t with a recorded mode using KD Tree
-            _, idx = mode_tree.query([[t]], k=1)
-            nearest_t = mode_times[idx[0]]
-            predicted_location = modes[nearest_t]
-        
-        # Compare predictions and actual values
-        euclidean_distance = math.sqrt((actual_location[0] - predicted_location[0]) ** 2 + (actual_location[1] - predicted_location[1]) ** 2)
-        total_trajectory += 1
+            x1, y1 = prediction
 
-        # Record distance and
-        total_euclidean_distance += euclidean_distance
-        if (euclidean_distance <= (1+math.sqrt(2))):
+        x2,y2 = test_data_row['x'], test_data_row['y'] 
+        euclidean_distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        if (euclidean_distance <= (1+np.sqrt(2))):
             accurate_count += 1
+        total_euclidean_distance += euclidean_distance
 
-print(f"Average Euclidean Distance {(euclidean_distance/total_trajectory):.4f}, Accuracy: {(accurate_count/total_trajectory):.4f}")
+print(f"Average Euclidean Distance {(total_euclidean_distance/total_trajectory):.4f}, Accuracy: {(accurate_count/total_trajectory):.4f}")
