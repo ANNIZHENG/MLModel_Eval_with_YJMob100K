@@ -13,7 +13,7 @@
 ## Run Baseline
 
 ```
-python Baselin.py
+python Baseline.py
 ```
 
 ## Run LSTM & Transformer in NYU HPC
