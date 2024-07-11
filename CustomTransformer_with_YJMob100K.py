@@ -62,7 +62,7 @@ BATCH_SIZE = (len(train_dataset)//len(grouped_data_train))*10
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 # test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
 
-print(f"{len(train_dataset)} Training loaded with batch_size being {BATCH_SIZE}!") # and {len(test_dataset)} Testing data 
+print(f"{len(train_dataset)} training data loaded with batch_size being {BATCH_SIZE}!") # and {len(test_dataset)} Testing data 
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
 class PositionalEncoding(nn.Module):
