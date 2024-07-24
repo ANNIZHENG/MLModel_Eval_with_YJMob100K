@@ -424,7 +424,7 @@ def measure_accuracy_recursive_inference(all_user_predictions, test_data, real_t
 
         # Euclidean Distance Calculate
         euclidean_distances = np.linalg.norm(decoded_true_traj - decoded_pred_traj, axis=1)
-        print("Euclidean Distance Difference:")
+        print("Euclidean Distance Difference:", euclidean_distances)
         print()
 
         total_distance += np.sum(euclidean_distances)
