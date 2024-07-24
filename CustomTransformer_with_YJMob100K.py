@@ -412,6 +412,8 @@ def measure_accuracy_recursive_inference(test_data, real_test_data, threshold=(1
 
         temp_real_test_data = real_test_data[(real_test_data['uid']==test_uid) & (real_test_data['d'].isin(test_data_day)) & (real_test_data['t'].isin(test_data_time))]
         predicted_test_data = trajectory[:len(temp_real_test_data)]
+
+        print(predicted_test_data) # TODO: Delete
         
         # # Decode true trajectory and predicted trajectory
         decoded_true_traj = temp_real_test_data[['x', 'y']].to_numpy()
