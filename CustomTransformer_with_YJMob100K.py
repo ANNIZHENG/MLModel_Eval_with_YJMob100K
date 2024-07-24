@@ -253,8 +253,8 @@ class Transformer(nn.Module):
 print("Custom Transformer loaded!")
 
 def decode_token_to_cell(token_id, num_cells_per_row):
-    cell_x = (token_id % num_cells_per_row) + 1
-    cell_y = (token_id // num_cells_per_row) + 1
+    cell_x = token_id % num_cells_per_row + 1
+    cell_y = token_id // num_cells_per_row + 1 
     return cell_x, cell_y
 
 def decode_trajectory(traj, num_cells_per_row=200):
