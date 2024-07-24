@@ -399,7 +399,7 @@ def recursive_inference_per_user(model, dataloader, device, input_size, output_s
     
     return all_user_predictions    
 
-def measure_accuracy_recursive_inference(test_data, real_test_data, threshold=(1+math.sqrt(2))):
+def measure_accuracy_recursive_inference(all_user_predictions, test_data, real_test_data, threshold=(1+math.sqrt(2))):
     total_distance = 0.0
     total_trajectories = 0
     correct_trajectories = 0
@@ -412,15 +412,21 @@ def measure_accuracy_recursive_inference(test_data, real_test_data, threshold=(1
 
         temp_real_test_data = real_test_data[(real_test_data['uid']==test_uid) & (real_test_data['d'].isin(test_data_day)) & (real_test_data['t'].isin(test_data_time))]
         predicted_test_data = trajectory[:len(temp_real_test_data)]
-
-        print(predicted_test_data) # TODO: Delete
         
         # # Decode true trajectory and predicted trajectory
         decoded_true_traj = temp_real_test_data[['x', 'y']].to_numpy()
         decoded_pred_traj = np.array(decode_trajectory(predicted_test_data))
 
+        print("True Trajectory:")
+        print(decoded_true_traj)
+        print("Predicted Trajectory:")
+        print(decoded_pred_traj)
+
         # Euclidean Distance Calculate
         euclidean_distances = np.linalg.norm(decoded_true_traj - decoded_pred_traj, axis=1)
+        print("Euclidean Distance Difference:")
+        print()
+
         total_distance += np.sum(euclidean_distances)
 
         # Apply threshold
@@ -467,4 +473,4 @@ test_data = pd.read_csv('test.csv') # file with 999 (unknown number)
 real_test_data = pd.read_csv('yjmob100k-dataset1.csv.gz', compression='gzip') # file with actual location info
 print("Actual data loaded. Ready to measure accuracy!")
 
-measure_accuracy_recursive_inference(test_data, real_test_data)
+measure_accuracy_recursive_inference(all_user_predictions, test_data, real_test_data)
