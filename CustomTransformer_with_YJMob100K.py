@@ -72,11 +72,12 @@ def collate_fn(batch):
     return torch.tensor(unpacked_user_id), inputs_padded, labels_padded, positions_padded, label_positions_padded
 
 BATCH_SIZE_train = (len(train_dataset)//len(grouped_data_train))*10
+BATCH_SIZE_test = 1 # BATCH_SIZE_train
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE_train, shuffle=True,  collate_fn=collate_fn)
-test_dataloader  = DataLoader(test_dataset,  batch_size=1, shuffle=False, collate_fn=collate_fn)
+test_dataloader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE_test, shuffle=False, collate_fn=collate_fn)
 
-print(f"{len(train_dataset)} Training data and {len(test_dataset)} Testing data loaded ... with train batch size being {BATCH_SIZE_train} and with test batch size being 1!")
+print(f"{len(train_dataset)} Training data and {len(test_dataset)} Testing data loaded ... with train batch size being {BATCH_SIZE_train} and with test batch size being {BATCH_SIZE_test}!")
 
 # Time = Positional Encoding = Time Embedding + Sequential Encoding
 class PositionalEncoding(nn.Module):
@@ -261,7 +262,7 @@ def decode_trajectory(traj, num_cells_per_row=200):
     decoded_traj = [decode_token_to_cell(token_id, num_cells_per_row) for token_id in traj]
     return decoded_traj
 
-def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2)), state='train'):
+def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=learning_rate)
@@ -272,11 +273,13 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2)), 
     correct_trajectories = 0
     
     for _, inputs, labels, positions, label_positions in dataloader:
-        inputs, labels = inputs.to(device), labels.to(device)
-        positions, label_positions = positions.to(device), label_positions.to(device)
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+        positions = positions.to(device)
+        label_positions = label_positions.to(device)
         
         optimizer.zero_grad()
-        outputs = model(inputs, positions, labels, label_positions, state)
+        outputs = model(inputs, positions, labels, label_positions)
         loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
         
         loss.backward()
