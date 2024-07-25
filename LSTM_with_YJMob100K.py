@@ -176,7 +176,8 @@ def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
     
     with torch.no_grad():  
         for inputs, labels, _, _ in dataloader:
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
             outputs = model(inputs)  
             _, predicted = outputs.max(2)  
@@ -207,7 +208,7 @@ def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
 
     return accuracy
 
-def recursive_inference_per_user(model, dataloader, device, input_size, output_size, total_outputs=192):
+def recursive_inference_per_user(model, dataloader, device, total_outputs=192):
     model.eval()
     all_user_predictions = {} 
 
@@ -260,7 +261,7 @@ def measure_accuracy_recursive_inference(all_user_predictions, test_data, real_t
         temp_real_test_data = real_test_data[(real_test_data['uid']==test_uid) & (real_test_data['d'].isin(test_data_day)) & (real_test_data['t'].isin(test_data_time))]
         predicted_test_data = trajectory[:len(temp_real_test_data)]
         
-        # # Decode true trajectory and predicted trajectory
+        # Decode true trajectory and predicted trajectory
         decoded_true_traj = temp_real_test_data[['x', 'y']].to_numpy()
         decoded_pred_traj = np.array(decode_trajectory(predicted_test_data))
 
@@ -300,17 +301,17 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 EPOCH_NUM = 3
-lstm = LSTMModel(loc_size=40000, 
+model = LSTMModel(loc_size=40000, 
                  output_size=output_size, 
                  embed_dim=64, 
                  hidden_size=64, 
                  num_layers=1, 
                  device=device)
-lstm.to(device)
-train_model(lstm, train_dataloader, device, EPOCH_NUM, 0.001)
+model.to(device)
+train_model(model, train_dataloader, device, EPOCH_NUM, 0.001)
 
 # Autoregressive Inference
-all_user_predictions = recursive_inference_per_user(model, test_dataloader, device, input_size, output_size, total_outputs=192)
+all_user_predictions = recursive_inference_per_user(model, test_dataloader, device, total_outputs=192)
 print("Predicted data loaded!")
 
 # Output accuracy

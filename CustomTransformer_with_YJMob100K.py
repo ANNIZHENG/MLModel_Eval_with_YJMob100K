@@ -279,7 +279,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
         label_positions = label_positions.to(device)
         
         optimizer.zero_grad()
-        outputs = model(inputs, positions, labels, label_positions)
+        outputs = model(inputs, positions, labels, label_positions, True)
         loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
         
         loss.backward()
@@ -329,8 +329,10 @@ def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
     
     with torch.no_grad():  
         for _, inputs, labels, positions, label_positions in dataloader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            positions, label_positions = positions.to(device), label_positions.to(device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            positions = positions.to(device)
+            label_positions = label_positions.to(device)
 
             outputs = model(inputs, None, positions, None, False)
 
@@ -363,7 +365,7 @@ def inference(model, dataloader, device, threshold=(1+math.sqrt(2))):
 
     return accuracy
 
-def recursive_inference_per_user(model, dataloader, device, input_size, output_size, total_outputs=192):
+def recursive_inference_per_user(model, dataloader, device, total_outputs=192):
     model.eval()
     all_user_predictions = {} 
 
@@ -373,8 +375,10 @@ def recursive_inference_per_user(model, dataloader, device, input_size, output_s
             
             # Extract info from dataloader
             user_id = user_id.item()
-            inputs, labels = inputs.to(device), labels.to(device)
-            positions, label_positions = positions.to(device), label_positions.to(device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            positions = positions.to(device)
+            label_positions = label_positions.to(device)
 
             predictions = []
             current_input = []
@@ -414,9 +418,11 @@ def measure_accuracy_recursive_inference(all_user_predictions, test_data, real_t
         test_data_time = temp_test_data['t']
 
         temp_real_test_data = real_test_data[(real_test_data['uid']==test_uid) & (real_test_data['d'].isin(test_data_day)) & (real_test_data['t'].isin(test_data_time))]
+        print(len(temp_real_test_data))
+        print(len(trajectory))
         predicted_test_data = trajectory[:len(temp_real_test_data)]
         
-        # # Decode true trajectory and predicted trajectory
+        # Decode true trajectory and predicted trajectory
         decoded_true_traj = temp_real_test_data[['x', 'y']].to_numpy()
         decoded_pred_traj = np.array(decode_trajectory(predicted_test_data))
 
@@ -468,7 +474,7 @@ model.to(device)
 train_model(model, train_dataloader, device, epochs=EPOCH_NUM, learning_rate=0.001)
 
 # Autoregressive Inference
-all_user_predictions = recursive_inference_per_user(model, test_dataloader, device, input_size, output_size, total_outputs=192)
+all_user_predictions = recursive_inference_per_user(model, test_dataloader, device, total_outputs=192)
 print("Predicted data loaded!")
 
 # Output accuracy
