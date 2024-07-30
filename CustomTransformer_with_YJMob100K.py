@@ -428,9 +428,9 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                     pred_traj = current_label[i].cpu().numpy() # len: 48
 
                     # Concatenate and truncate to create new input
-                    new_input_traj = torch.tensor(np.concatenate((true_traj[48:], pred_traj))).to(device)
-                    new_position = current_positions[i].to(device)
-                    new_label_position = current_label_positions[i].to(device)
+                    new_input_traj = torch.tensor(np.concatenate((true_traj[48:], pred_traj))).to(device) # Concatenate prediction with the previous input
+                    new_position = current_positions[i].to(device) # the KNOWN time data for the initial prediction
+                    new_label_position = current_label_positions[i].to(device) # the KNOWN label's time data for the initial prediction
 
                     new_inputs.append(new_input_traj)
                     new_positions.append(new_position)
@@ -474,4 +474,24 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 
 # Autoregressive Inference
 print("Test")
-recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+
+_, _, location_data, time_data = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+
+# Output result as csv
+import csv
+
+# Specify the CSV file name
+csv_file = 'output.csv'
+
+# Get the list of user IDs (keys from one of the dictionaries)
+user_ids = location_data.keys()
+
+# Write the dictionaries to the CSV file
+with open(csv_file, 'w', newline='') as file:
+    writer = csv.writer(file)
+    # Write the header
+    writer.writerow(["user_id", "location", "time"])
+    
+    # Write the rows
+    for user_id in user_ids:
+        writer.writerow([user_id, location_data[user_id], time_data[user_id]])
