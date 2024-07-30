@@ -321,7 +321,7 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
 model.to(device)
-train_model(model, train_dataloader, device, epochs=1, learning_rate=0.003)
+train_model(model, train_dataloader, device, epochs=5, learning_rate=0.003)
 
 # Exapnd prediction to prepare to correspond to ground truth
 def expand_predictions(predicted_locs, predicted_times, max_time=47):
@@ -463,7 +463,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             # Record the total distance
             total_distances += total_distance
             total_locations += total_location
-            correct_locations += correct_locations
+            correct_locations += correct_location
 
     avg_euclidean_distance = total_distances / total_locations
     accuracy = correct_locations / total_locations
