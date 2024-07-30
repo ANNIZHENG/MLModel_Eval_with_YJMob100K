@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
-import csv
 
 # Load data with users from yjmob1
 df_train = pd.read_csv('train.csv')
@@ -322,7 +321,7 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
 model.to(device)
-train_model(model, train_dataloader, device, epochs=5, learning_rate=0.003)
+train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
 
 # Exapnd prediction to prepare to correspond to ground truth
 def expand_predictions(predicted_locs, predicted_times, max_time=47):
@@ -366,9 +365,9 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
         if (euclidean_distance < threshold):
             correct_location += 1
     
-    avg_euclidean_distance = total_distance / total_location 
-    accuracy = correct_location / total_location
-    print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+    # avg_euclidean_distance = total_distance / total_location 
+    # accuracy = correct_location / total_location
+    # print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
 
     return matched_locs, total_distance, total_location, correct_location
 
@@ -476,22 +475,12 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 # Autoregressive Inference
 print("Test")
 
-_, _, location_data, time_data = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+_, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-## Output result as csv
+import json
 
-# Specify the CSV file name
-csv_file = 'output.csv'
+with open('output_prediction.json', 'w') as json_file:
+    json.dump(predictions, json_file)
 
-# Get the list of user IDs (keys from one of the dictionaries)
-user_ids = location_data.keys()
-
-# Write the dictionaries to the CSV file
-with open(csv_file, 'w', newline='') as file:
-    writer = csv.writer(file)
-    # Write the header
-    writer.writerow(["user_id", "location", "time"])
-    
-    # Write the rows
-    for user_id in user_ids:
-        writer.writerow([user_id, location_data[user_id], time_data[user_id]])
+with open('output_predictions_time.json', 'w') as json_file:
+    json.dump(predictions, json_file)
