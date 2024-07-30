@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
+import csv
 
 # Load data with users from yjmob1
 df_train = pd.read_csv('train.csv')
@@ -477,8 +478,7 @@ print("Test")
 
 _, _, location_data, time_data = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-# Output result as csv
-import csv
+## Output result as csv
 
 # Specify the CSV file name
 csv_file = 'output.csv'
