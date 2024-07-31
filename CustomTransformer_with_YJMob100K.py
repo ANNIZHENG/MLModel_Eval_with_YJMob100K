@@ -476,9 +476,22 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-import pprint
+# Output data to csv
 
-# Writing to a txt file
-with open('output.txt', 'w') as file:
-    pprint.pprint(predictions[80000], stream=file)
-    pprint.pprint(predictions_time[80000], stream=file)
+import csv
+
+# Prepare data for CSV
+csv_data = []
+for uid in predictions:
+    locations = predictions[uid]
+    times = predictions_time[uid]
+    for time, location in zip(times, locations):
+        csv_data.append([uid, time] + location)
+
+# Write data to CSV file
+with open('output_transformer.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['uid', 't', 'x', 'y']) 
+    writer.writerows(csv_data)
+
+print("Outputs written to the csv file")
