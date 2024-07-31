@@ -477,10 +477,9 @@ print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
 # Output data to csv
-
 import csv
 
-# Prepare data for CSV
+# Output predicted trajectory data as CSV
 csv_data = []
 for uid in predictions:
     locations = predictions[uid]
@@ -489,9 +488,9 @@ for uid in predictions:
         csv_data.append([uid, time] + location)
 
 # Write data to CSV file
-with open('output_transformer.csv', 'w', newline='') as file:
+with open('transformer_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['uid', 't', 'x', 'y']) 
     writer.writerows(csv_data)
 
-print("Outputs written to the csv file")
+print("Predicted trajectories written to the csv file")
