@@ -476,11 +476,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-# Output prediction
-import json
-
-with open('output_prediction.json', 'w') as json_file:
-    json.dump(predictions, json_file)
-
-with open('output_predictions_time.json', 'w') as json_file:
-    json.dump(predictions, json_file)
+print(predictions)
+print()
+print()
+print(predictions_time)
