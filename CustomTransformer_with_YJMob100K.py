@@ -476,7 +476,6 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-print(predictions)
+print(predictions[80000])
 print()
-print()
-print(predictions_time)
+print(predictions_time[80000])
