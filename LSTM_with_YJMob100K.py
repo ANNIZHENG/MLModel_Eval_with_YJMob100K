@@ -8,9 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-df_train = pd.read_csv('train.csv')
-df_test  = pd.read_csv('test.csv')
-df_true_test = pd.read_csv('true_test.csv')
+df_train = pd.read_csv('data/train_10.csv')
+df_test  = pd.read_csv('data/test_10.csv')
+df_true_test = pd.read_csv('data/true_test_10.csv')
 
 # Adjust input and output size here
 input_size  = 192
@@ -230,8 +230,8 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
         for user_id, inputs, _, _, label_positions in dataloader: 
 
             user_id = user_id.item()
-            inputs = inputs.to(device)
-            label_positions = label_positions.to(device)
+            inputs = inputs.to(device) # the location
+            label_positions = label_positions.to(device) # the time
 
             # Load Ground Truth Data
             true_data_by_uid = true_data[true_data['uid']==user_id]
@@ -240,20 +240,21 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             num_predictions = len(true_data_by_uid) # number of needed prediction
             
             # Store predictions and times for the current user
-            user_predictions = []
-            user_predictions_time = []
+            user_predictions = [] # store locaiton
+            user_predictions_time = [] # store time
 
             # Initial Prediction
-            outputs = model(inputs)
+            outputs = model(inputs) # get location prediction
             _, predicted = outputs.max(2)  # Get the index of the max log-probability
             
             # Set up for Autoregressive test
-            current_input = inputs
-            current_label = predicted
+            current_input = inputs # the input locations
+            current_label = predicted # the predicted locations
+            current_label_positions = label_positions # the predicted times
             
             for i in range(current_input.size(0)):
-                user_predictions.extend(predicted[i].cpu().numpy())
-                user_predictions_time.extend(label_positions[i].cpu().numpy())
+                user_predictions.extend(predicted[i].cpu().numpy()) # store the predicted locations
+                user_predictions_time.extend(label_positions[i].cpu().numpy()) # store the predicted times
 
             # Autoregressive Prediction
             while (len(user_predictions) < num_predictions):
@@ -262,12 +263,12 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                 new_label_positions = []
                 
                 for i in range(current_input.size(0)):
-                    true_traj = current_input[i].cpu().numpy() # len: 192
-                    pred_traj = current_label[i].cpu().numpy() # len: 48
+                    true_traj = current_input[i].cpu().numpy() # len: 192 # the input locations
+                    pred_traj = current_label[i].cpu().numpy() # len: 48  # the predicted locations
 
                     # Concatenate and truncate to create new input
-                    new_input_traj = torch.tensor(np.concatenate((true_traj[48:], pred_traj))).to(device) # Concatenate prediction with the previous input
-                    new_label_position = current_label_positions[i].to(device) # the KNOWN label's time data for the initial prediction
+                    new_input_traj = torch.tensor(np.concatenate((true_traj[48:], pred_traj))).to(device) # Concatenated prediction (the new input)
+                    new_label_position = current_label_positions[i].to(device) # the predicted time (the known time)
 
                     new_inputs.append(new_input_traj)
                     new_label_positions.append(new_label_position)
@@ -315,15 +316,17 @@ import csv
 # Output predicted trajectory data as CSV
 csv_data = []
 for uid in predictions:
-    locations = predictions[uid]
+    locations = predictions[uid].tolist()
     times = predictions_time[uid]
     for time, location in zip(times, locations):
-        csv_data.append([uid, time] + location)
+        location.extend([time, uid])
+        csv_data.append(location)
+        print(location)
 
 # Write data to CSV file
 with open('lstm_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(['uid', 't', 'x', 'y']) 
+    writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
