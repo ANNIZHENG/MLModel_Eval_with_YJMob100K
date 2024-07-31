@@ -8,9 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-df_train = pd.read_csv('train.csv')
-df_test  = pd.read_csv('test.csv')
-df_true_test = pd.read_csv('true_test.csv')
+df_train = pd.read_csv('data/train_10.csv')
+df_test  = pd.read_csv('data/test_10.csv')
+df_true_test = pd.read_csv('data/true_test_10.csv')
 
 # Adjust input and output size here
 input_size  = 192
@@ -482,15 +482,17 @@ import csv
 # Output predicted trajectory data as CSV
 csv_data = []
 for uid in predictions:
-    locations = predictions[uid]
+    locations = predictions[uid].tolist()
     times = predictions_time[uid]
     for time, location in zip(times, locations):
-        csv_data.append([uid, time] + location)
+        location.extend([time, uid])
+        csv_data.append(location)
+        print(location)
 
 # Write data to CSV file
 with open('transformer_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(['uid', 't', 'x', 'y']) 
+    writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
