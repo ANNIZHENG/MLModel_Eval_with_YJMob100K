@@ -16,53 +16,51 @@
 python Baseline.py
 ```
 
-## Run LSTM & Transformer in NYU HPC
+## Environment Set-Up (for Running LSTM and Transformer)
 
-0. Sign into NYU HPC: https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
+1. Sign into NYU HPC: https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
 
-1. Clone this repository
+2. Clone this repository
 
 ```
 git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
 ```
 
-2. Request resourses (1 hour, 4 cores, 4 GPU)
+3. Request resourses (1 hour, 4 cores, 4 GPU)
 
 ```
 srun -t 1:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
 ```
 
-3. Load CUDA and Python3 packages
-
-**Load desired CUDA package**
+4. Load CUDA and Python3 packages
 
 ```
-module spider cuda # optional; check cuda availability
+module spider cuda  # Check cuda availability
+
 module load cuda/11.6.2
 ```
 
-**Check Python Availability**
-
 ```
-module spider python # optional; check python availability
+module spider python  # Check python availability
+
 module load python/intel/3.8.6
 ```
 
-4. Set-up and Activate Virtual Environment: 
+5. Set-up and Activate Virtual Environment: 
 
 ```
-virtualenv --system-site-packages -p python3 ./venv
+virtualenv --system-site-packages -p python3 ./venv  # Create Virtual Environment (OPTIONAL)
+
 source ./venv/bin/activate
 ```
 
-5. Install PyTorch (If not already)
+6. Install PyTorch
 
 ```
-pip install torch
-pip install dtaidistance
+pip install torch  # Install PyTorch (OPTIONAL)
 ```
 
-6. Go into the repository and start the training
+## Run Files (Model Training and Testing)
 
 ```
 cd MLModel_Eval_with_YJMob100K
