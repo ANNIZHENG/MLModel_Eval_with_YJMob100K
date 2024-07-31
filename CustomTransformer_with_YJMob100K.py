@@ -476,6 +476,8 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-print(predictions[80000])
-print()
-print(predictions_time[80000])
+# Writing to a txt file
+with open('data.txt', 'w') as file:
+    file.write(str(predictions))
+    file.write(str('\n'))
+    file.write(str(predictions_time))
