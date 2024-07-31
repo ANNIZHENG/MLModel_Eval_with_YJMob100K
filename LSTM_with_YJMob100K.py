@@ -244,7 +244,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             user_predictions_time = [] # store time
 
             # Initial Prediction
-            outputs = model(inputs) # get location prediction
+            outputs = model(inputs) # get the initial prediction on location
             _, predicted = outputs.max(2)  # Get the index of the max log-probability
             
             # Set up for Autoregressive test
@@ -262,22 +262,24 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                 new_inputs = []
                 new_label_positions = []
                 
+                # Create New Batch as Input
                 for i in range(current_input.size(0)):
+                    # New Input = (192-48) Past Location + 48 Predicted Location
                     true_traj = current_input[i].cpu().numpy() # len: 192 # the input locations
                     pred_traj = current_label[i].cpu().numpy() # len: 48  # the predicted locations
 
-                    # Concatenate and truncate to create new input
+                    # Truncate and Concatenate to create new input
                     new_input_traj = torch.tensor(np.concatenate((true_traj[48:], pred_traj))).to(device) # Concatenated prediction (the new input)
                     new_label_position = current_label_positions[i].to(device) # the predicted time (the known time)
 
-                    new_inputs.append(new_input_traj)
-                    new_label_positions.append(new_label_position)
+                    new_inputs.append(new_input_traj) # Append concatenated prediction Location, i.e., the new input
+                    new_label_positions.append(new_label_position) # Append the predicted Time
                 
-                # Stack to form a new batch
+                # Stack info to form a New Batch
                 current_input = torch.stack(new_inputs)
                 current_label_positions = torch.stack(new_label_positions)
                 
-                # New Prediction
+                # Create New Prediction
                 new_outputs = model(current_input) 
                 _, predicted = new_outputs.max(2)
                 
