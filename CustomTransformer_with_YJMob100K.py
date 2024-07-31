@@ -474,9 +474,9 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 
 # Autoregressive Inference
 print("Test")
-
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
+# Output prediction
 import json
 
 with open('output_prediction.json', 'w') as json_file:
