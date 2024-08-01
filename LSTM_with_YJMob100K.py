@@ -161,7 +161,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
 
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
-        print(f"Test: Epoch {epoch+1}")
+        print(f"Train: Epoch {epoch+1}")
         train(model, dataloader, device, learning_rate)
 
 print("Start training process!")
