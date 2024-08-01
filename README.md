@@ -29,7 +29,7 @@ git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
 3. Request resourses (1 hour, 4 cores, 4 GPU)
 
 ```
-srun -t 1:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
+srun -t 4:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
 ```
 
 4. Load CUDA and Python3 packages
