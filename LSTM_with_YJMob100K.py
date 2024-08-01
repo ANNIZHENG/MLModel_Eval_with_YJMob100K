@@ -323,7 +323,6 @@ for uid in predictions:
     for time, location in zip(times, locations):
         location.extend([time, uid])
         csv_data.append(location)
-        print(location)
 
 # Write data to CSV file
 with open('lstm_prediction.csv', 'w', newline='') as file:
