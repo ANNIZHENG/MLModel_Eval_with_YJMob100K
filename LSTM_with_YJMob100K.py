@@ -343,7 +343,6 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-'''
 # Output data to csv
 import csv
 
@@ -363,4 +362,3 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
-'''
