@@ -8,8 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-df_train = pd.read_csv('train.csv')
+# df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
+df_train = df_test
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
@@ -177,9 +178,29 @@ def expand_predictions(predicted_locs, predicted_times, max_time=47):
     expanded_times = list(range(max_time + 1))
     current_loc = predicted_locs[0]
     loc_dict = dict(zip(predicted_times, predicted_locs))
-    for time in expanded_times:
-        if time in loc_dict:
-            current_loc = loc_dict[time]
+    for time in expanded_times: # for time in the 48 time indices
+        if time in loc_dict: # if time is predicted
+            # then use the prediction
+            current_loc = loc_dict[time] # then use the prediction
+        else: # if time is not predicted
+            # then use the previous/later prediction
+            found = False
+            if time > 0: # search the previous predictions
+                for j in range(time-1,-1,-1):
+                    prev_time = predicted_times[j]
+                    if prev_time in loc_dict:
+                        current_loc = loc_dict[prev_time]
+                        found = True
+                        break
+            if not found: # search the later predictions
+                for j in range(time+1, len(predicted_times)):
+                    next_time = predicted_times[j]
+                    if next_time in loc_dict:
+                        current_loc = loc_dict[next_time]
+                        found = True
+                        break
+            if not found: # last check
+                current_loc = predicted_locs[0]
         expanded_locs.append(current_loc)
     return expanded_locs, expanded_times
 
@@ -212,6 +233,10 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
         total_location += 1
         if (euclidean_distance < threshold):
             correct_location += 1
+    
+    # avg_euclidean_distance = total_distance / total_location 
+    # accuracy = correct_location / total_location
+    # print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
 
     return matched_locs, total_distance, total_location, correct_location
 
@@ -233,20 +258,25 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             inputs = inputs.to(device) # the location
             label_positions = label_positions.to(device) # the time
 
-            # Load Ground Truth Data
+            # Ground Truth Data import
             true_data_by_uid = true_data[true_data['uid']==user_id]
             true_locs = np.array(list(zip(true_data_by_uid['x'], true_data_by_uid['y']))) # ground truth location
             true_times = true_data_by_uid['t'].to_list() # ground truth time
             num_predictions = len(true_data_by_uid) # number of needed prediction
             
             # Store predictions and times for the current user
-            user_predictions = [] # store locaiton
-            user_predictions_time = [] # store time
+            user_predictions = []
+            user_predictions_time = []
 
             # Initial Prediction
             outputs = model(inputs) # get the initial prediction on location
             _, predicted = outputs.max(2)  # Get the index of the max log-probability
+
+            for i in range(inputs.size(0)):
+                user_predictions.extend(predicted[i].cpu().numpy())
+                user_predictions_time.extend(label_positions[i].cpu().numpy())
             
+            '''
             # Set up for Autoregressive test
             current_input = inputs # the input locations
             current_label = predicted # the predicted locations
@@ -288,9 +318,10 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                     user_predictions_time.extend(current_label_positions[i].cpu().numpy())
 
                 current_label = predicted
+            '''
             
             # Measure accuracy for each user's prediction
-            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions[:num_predictions], user_predictions_time[:num_predictions], true_locs, true_times)
+            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
 
             # Store predictions and times for the user
             predictions[user_id] = matched_locs
@@ -312,6 +343,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
+'''
 # Output data to csv
 import csv
 
@@ -331,3 +363,4 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
+'''
