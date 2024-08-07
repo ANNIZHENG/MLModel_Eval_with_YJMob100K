@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-# df_train = pd.read_csv('train_10.csv')
+# df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
 df_train = df_test # Discriminative Model setup
 df_true_test = pd.read_csv('true_test.csv')
@@ -308,7 +308,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}") 
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}") # Accuracy: {accuracy:.4f}
     
     return avg_loss, avg_euclidean_distance, accuracy
 
@@ -504,6 +504,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
+'''
 # Output data to csv
 import csv
 
@@ -523,3 +524,4 @@ with open('transformer_prediction.csv', 'w', newline='') as file:
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
+'''

@@ -156,7 +156,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}") 
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}")  # Accuracy: {accuracy:.4f}
     
     return avg_loss, avg_euclidean_distance, accuracy
 
@@ -269,7 +269,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             user_predictions_time = []
 
             # Initial Prediction
-            outputs = model(inputs) # get the initial prediction on location
+            outputs = model(inputs) # Get the initial prediction on location
             _, predicted = outputs.max(2)  # Get the index of the max log-probability
 
             for i in range(inputs.size(0)):
@@ -343,6 +343,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
+'''
 # Output data to csv
 import csv
 
@@ -362,3 +363,4 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
     writer.writerows(csv_data)
 
 print("Predicted trajectories written to the csv file")
+'''
