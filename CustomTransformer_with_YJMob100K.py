@@ -8,8 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-df_train = pd.read_csv('train.csv')
+# df_train = pd.read_csv('train_10.csv')
 df_test  = pd.read_csv('test.csv')
+df_train = df_test # Discriminative Model setup
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
@@ -329,9 +330,29 @@ def expand_predictions(predicted_locs, predicted_times, max_time=47):
     expanded_times = list(range(max_time + 1))
     current_loc = predicted_locs[0]
     loc_dict = dict(zip(predicted_times, predicted_locs))
-    for time in expanded_times:
-        if time in loc_dict:
-            current_loc = loc_dict[time]
+    for time in expanded_times: # for time in the 48 time indices
+        if time in loc_dict: # if time is predicted
+            # then use the prediction
+            current_loc = loc_dict[time] # then use the prediction
+        else: # if time is not predicted
+            # then use the previous/later prediction
+            found = False
+            if time > 0: # search the previous predictions
+                for j in range(time-1,-1,-1):
+                    prev_time = predicted_times[j]
+                    if prev_time in loc_dict:
+                        current_loc = loc_dict[prev_time]
+                        found = True
+                        break
+            if not found: # search the later predictions
+                for j in range(time+1, len(predicted_times)):
+                    next_time = predicted_times[j]
+                    if next_time in loc_dict:
+                        current_loc = loc_dict[next_time]
+                        found = True
+                        break
+            if not found: # last check
+                current_loc = predicted_locs[0]
         expanded_locs.append(current_loc)
     return expanded_locs, expanded_times
 
@@ -391,12 +412,12 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             positions = positions.to(device)
             label_positions = label_positions.to(device)
 
-            # Load Ground Truth Data
+            # Ground Truth Data import
             true_data_by_uid = true_data[true_data['uid']==user_id]
             true_locs = np.array(list(zip(true_data_by_uid['x'], true_data_by_uid['y']))) # ground truth location
             true_times = true_data_by_uid['t'].to_list() # ground truth time
-            num_predictions = len(true_data_by_uid) # number of needed prediction
-            
+            num_predictions = len(true_data_by_uid)
+
             # Store predictions and times for the current user
             user_predictions = []
             user_predictions_time = []
@@ -404,7 +425,12 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             # Initial Prediction
             outputs = model(inputs, positions, labels, label_positions, True)
             _, predicted = outputs.max(2)  # Get the index of the max log-probability
-            
+
+            for i in range(inputs.size(0)):
+                user_predictions.extend(predicted[i].cpu().numpy())
+                user_predictions_time.extend(label_positions[i].cpu().numpy()) # user_predictions_time.extend(positions[i].cpu().numpy())
+
+            '''
             # Set up for Autoregressive test
             current_input = inputs
             current_positions = positions
@@ -415,8 +441,9 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                 user_predictions.extend(predicted[i].cpu().numpy())
                 user_predictions_time.extend(label_positions[i].cpu().numpy()) # user_predictions_time.extend(positions[i].cpu().numpy())
 
-            # Autoregressive Prediction
+            # Autoregressive Prediction 
             while (len(user_predictions) < num_predictions):
+
                 # Initialize batch-related variables for prediction
                 new_inputs = []
                 new_positions = []
@@ -452,13 +479,14 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                     user_predictions_time.extend(current_label_positions[i].cpu().numpy())
 
                 current_label = predicted
+            '''
             
             # Measure accuracy for each user's prediction
-            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions[:num_predictions], user_predictions_time[:num_predictions], true_locs, true_times)
+            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
 
             # Store predictions and times for the user
-            predictions[user_id] = matched_locs
-            predictions_time[user_id] = true_times
+            predictions[user_id] = matched_locs # the predicted location in (x,y)
+            predictions_time[user_id] = true_times # the predicted time
 
             # Record the total distance
             total_distances += total_distance
