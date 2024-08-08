@@ -26,45 +26,60 @@ python Baseline.py
 git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
 ```
 
-3. Request resourses (1 hour, 4 cores, 4 GPU)
+3. Request resourses (2 hour, 4 cores, 4 GPU)
 
 ```
-srun -t 4:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
+srun -t 2:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
 ```
 
 4. Load CUDA and Python3 packages
 
+Check CUDA availabiilty
 ```
-module spider cuda  # Check cuda availability
+module spider cuda
+```
 
+Load CUDA
+```
 module load cuda/11.6.2
 ```
 
-```
-module spider python  # Check python availability
+Check Python availability
 
+```
+module spider python
+```
+
+Load Python
+
+```
 module load python/intel/3.8.6
 ```
 
 5. Set-up and Activate Virtual Environment: 
 
-```
-virtualenv --system-site-packages -p python3 ./venv  # Create Virtual Environment (OPTIONAL)
+Create Virtual Environment
 
+```
+virtualenv --system-site-packages -p python3 ./venv
+```
+
+Activate Virtual Environment
+
+```
 source ./venv/bin/activate
 ```
 
-6. Install PyTorch
+6. If not already, install PyTorch
 
 ```
-pip install torch  # Install PyTorch (OPTIONAL)
+pip install torch
 ```
 
 ## Run Files (Model Training and Testing)
 
 ```
-cd MLModel_Eval_with_YJMob100K
-python CustomTransformer_with_YJMob100K.py # train and test the Transformer
-python LSTM_with_YJMob100K.py              # train and test the LSTM
-python Baseline.py                         # test the Baseline model
+python CustomTransformer_with_YJMob100K.py 
+python LSTM_with_YJMob100K.py
+python Baseline.py
 ```
