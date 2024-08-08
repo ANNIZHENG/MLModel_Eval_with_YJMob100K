@@ -282,33 +282,27 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
         # Get the index of the max log-probability
         _, predicted = outputs.max(2)
 
-        # Iterate over the batch
+        # Calculate accuracy for each location
         for i in range(labels.size(0)):
-            # Retrieve true trajectory and predicted trajectory
             true_traj = labels[i].cpu().numpy()
             pred_traj = predicted[i].cpu().numpy()
 
-            # Decode true trajectory and predicted trajectory
             decoded_true_traj = np.array(decode_trajectory(true_traj))
             decoded_pred_traj = np.array(decode_trajectory(pred_traj))
 
-            # Euclidean Distance Calcualtion
+            # Calculate Euclidean distances for each point
             euclidean_distances = np.linalg.norm(decoded_true_traj - decoded_pred_traj, axis=1)
             total_distance += np.sum(euclidean_distances)
-            total_trajectories += 1
+            total_trajectories += len(euclidean_distances)
 
-            # Apply threshold
-            if np.sum(euclidean_distances) <= threshold:
-                correct_trajectories += 1
+            # Increment correct count for distances below the threshold
+            correct_trajectories += np.sum(euclidean_distances < threshold)
     
-    # Calculate loss
     avg_loss = total_loss / len(dataloader)
-
-    # Calculate accuracy
     avg_euclidean_distance = total_distance / total_trajectories
     accuracy = correct_trajectories / total_trajectories
 
-    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}") # Accuracy: {accuracy:.4f}
+    print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
     
     return avg_loss, avg_euclidean_distance, accuracy
 
