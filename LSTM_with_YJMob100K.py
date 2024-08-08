@@ -164,7 +164,7 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = LSTMModel(loc_size=40000, output_size=output_size, embed_dim=64, hidden_size=64, num_layers=1, device=device)
 model.to(device)
-train_model(model=model, dataloader=train_dataloader, device=device, epochs=5, learning_rate=0.001)
+train_model(model=model, dataloader=train_dataloader, device=device, epochs=10, learning_rate=0.001)
 
 # Exapnd prediction to prepare to correspond to ground truth
 def expand_predictions(predicted_locs, predicted_times, max_time=47):

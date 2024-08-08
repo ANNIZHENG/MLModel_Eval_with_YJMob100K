@@ -316,7 +316,7 @@ print("Start training process!")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
 model.to(device)
-train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
+train_model(model, train_dataloader, device, epochs=8, learning_rate=0.001)
 
 # Exapnd prediction to prepare to correspond to ground truth
 def expand_predictions(predicted_locs, predicted_times, max_time=47):
