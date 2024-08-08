@@ -34,23 +34,23 @@ srun -t 2:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
 
 ### 4. Load CUDA and Python3 packages
 
-#### Check CUDA availabiilty
+Check CUDA availabiilty
 ```
 module spider cuda
 ```
 
-#### Load CUDA
+Load CUDA
 ```
 module load cuda/11.6.2
 ```
 
-#### Check Python availability
+Check Python availability
 
 ```
 module spider python
 ```
 
-#### Load Python
+Load Python
 
 ```
 module load python/intel/3.8.6
@@ -58,13 +58,13 @@ module load python/intel/3.8.6
 
 ### 5. Set Up and Activate Virtual Environment: 
 
-#### Create Virtual Environment
+Create Virtual Environment
 
 ```
 virtualenv --system-site-packages -p python3 ./venv
 ```
 
-#### Activate Virtual Environment
+Activate Virtual Environment
 
 ```
 source ./venv/bin/activate
