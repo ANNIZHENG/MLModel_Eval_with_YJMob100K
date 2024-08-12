@@ -9,9 +9,9 @@ from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
 # df_train = pd.read_csv('train.csv')
-df_test  = pd.read_csv('test.csv')
-df_train = df_test # Discriminative Model setup
-df_true_test = pd.read_csv('true_test.csv')
+df_test  = pd.read_csv('test_10.csv')
+df_train = df_test 
+df_true_test = pd.read_csv('true_test_10.csv')
 
 # Adjust input and output size here
 input_size  = 192
@@ -410,7 +410,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             true_data_by_uid = true_data[true_data['uid']==user_id]
             true_locs = np.array(list(zip(true_data_by_uid['x'], true_data_by_uid['y']))) # ground truth location
             true_times = true_data_by_uid['t'].to_list() # ground truth time
-            num_predictions = len(true_data_by_uid)
+            # num_predictions = len(true_data_by_uid)
 
             # Store predictions and times for the current user
             user_predictions = []
