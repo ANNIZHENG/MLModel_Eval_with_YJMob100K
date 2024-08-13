@@ -312,7 +312,7 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start Training Process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.1)
+model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=128, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.1)
 model.to(device)
 train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
 
@@ -524,7 +524,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 # Autoregressive Inference
 print("Test")
 _, _, predictions, predictions_time, predictions_nextplace = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
-
+'''
 # Output data to csv
 import csv
 
@@ -558,3 +558,4 @@ with open('transformer_prediction_nextplace.csv', 'w', newline='') as file:
     writer.writerows(csv_data_nextplace)
 
 print("Predicted trajectories written to the csv file")
+'''
