@@ -8,9 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-# df_train = pd.read_csv('train.csv')
+df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
-df_train = df_test
+# df_train = df_test
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
@@ -385,6 +385,8 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
 
+'''
+# Output next-place predicted trajectory data as CSV
 csv_data_nextplace = []
 for uid in predictions_nextplace:
     location = predictions_nextplace[uid].tolist()
@@ -397,5 +399,6 @@ with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data_nextplace)
+'''
 
 print("Predicted trajectories written to the csv file")
