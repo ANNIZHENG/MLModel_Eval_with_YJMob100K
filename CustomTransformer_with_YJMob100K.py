@@ -8,9 +8,9 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-# df_train = pd.read_csv('train.csv')
+df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
-df_train = df_test 
+# df_train = df_test 
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
@@ -21,7 +21,7 @@ class TrajectoryDataset(Dataset):
     def __init__(self, all_data, input_size, output_size):
         self.data = []
         window_size = input_size + output_size
-        for i in range(0, len(all_data)-window_size+1, int(window_size/2)):
+        for i in range(0, len(all_data)-window_size+1, window_size):
             uid = all_data.iloc[i]['uid']
             xy = all_data.iloc[i:i+window_size]['combined_xy'].tolist()
             t = all_data.iloc[i:i+window_size]['t'].tolist()
