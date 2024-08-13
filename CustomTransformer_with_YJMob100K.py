@@ -312,7 +312,7 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start Training Process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=512, num_layers=16, num_heads=8, device=device, forward_expansion=4, dropout_rate=0.1)
+model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.1)
 model.to(device)
 train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
 
@@ -552,7 +552,7 @@ for uid in predictions_nextplace:
     csv_data_nextplace.append(location)
 
 # Write data to CSV file
-with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
+with open('transformer_prediction_nextplace.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data_nextplace)
