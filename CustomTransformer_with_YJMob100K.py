@@ -312,7 +312,6 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start Training Process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
 model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=512, num_layers=16, num_heads=8, device=device, forward_expansion=4, dropout_rate=0.1)
 model.to(device)
 train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
@@ -370,7 +369,20 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
     total_location = 0
     correct_location = 0
 
+    total_distance_nextplace = 0.0
+    total_location_nextplace = 0
+    correct_location_nextplace = 0
+
     # Accuracy measure based on Euclidean Distance difference
+    # Next Place Prediction
+    matched_locs_nextplace = matched_locs[0]
+    euclidean_distance_nextplace = math.sqrt((true_locs[0][0] - matched_locs_nextplace[0])**2 + (true_locs[0][1] - matched_locs_nextplace[1])**2)
+    total_distance_nextplace += euclidean_distance_nextplace
+    total_location_nextplace += 1
+    if (euclidean_distance_nextplace < threshold):
+        correct_location_nextplace += 1
+
+    # Next Sequence Prediction
     euclidean_distances = np.linalg.norm(true_locs - matched_locs, axis=1)
     total_distance += np.sum(euclidean_distances)
 
@@ -383,7 +395,7 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
     # accuracy = correct_location / total_location
     # print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
 
-    return matched_locs, total_distance, total_location, correct_location
+    return matched_locs, total_distance, total_location, correct_location, matched_locs_nextplace, total_distance_nextplace, total_location_nextplace, correct_location_nextplace
 
 def recursive_inference_per_user(model, dataloader, device, true_data):
     # Measurement used for total accuracy calculation
@@ -391,10 +403,16 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
     total_locations = 0 # total num of location to be predicted
     correct_locations = 0 # total num of locations that are correctly predicted
 
+    total_distances_nextplace = 0.0
+    total_locations_nextplace = 0
+    correct_locations_nextplace = 0
+
     model.eval()
     
     predictions = {} # Store the 15-day predicted values per user
     predictions_time = {} # Store the corresponding 15-day time values per user
+
+    predictions_nextplace = {}
     
     with torch.no_grad():
         for user_id, inputs, labels, positions, label_positions in dataloader:    
@@ -475,29 +493,38 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             '''
             
             # Measure accuracy for each user's prediction
-            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
+            matched_locs, total_distance, total_location, correct_location, matched_locs_nextplace, total_distance_nextplace, total_location_nextplace, correct_location_nextplace = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
 
             # Store predictions and times for the user
             predictions[user_id] = matched_locs # the predicted location in (x,y)
             predictions_time[user_id] = true_times # the predicted time
+
+            predictions_nextplace[user_id] = matched_locs_nextplace # next place prediction
 
             # Record the total distance
             total_distances += total_distance
             total_locations += total_location
             correct_locations += correct_location
 
+            total_distances_nextplace += total_distance_nextplace # next place prediction
+            total_locations_nextplace+= total_location_nextplace # next place prediction
+            correct_locations_nextplace += correct_location_nextplace # next place prediction
+
     avg_euclidean_distance = total_distances / total_locations
     accuracy = correct_locations / total_locations
 
-    print(f"Total Users' Adjusted Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+    avg_euclidean_distance_nextplace = total_distances_nextplace / total_locations_nextplace
+    accuracy_nextplace = correct_locations_nextplace / total_locations_nextplace
 
-    return avg_euclidean_distance, accuracy, predictions, predictions_time
+    print(f"Total Users' Adjusted Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+    print(f"Total Users' Adjusted Euclidean Distance Difference of Next-Place Prediction: {avg_euclidean_distance_nextplace:.4f}, Accuracy: {accuracy_nextplace:.4f}")
+
+    return avg_euclidean_distance, accuracy, predictions, predictions_time, predictions_nextplace
 
 # Autoregressive Inference
 print("Test")
-_, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+_, _, predictions, predictions_time, predictions_nextplace = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-'''
 # Output data to csv
 import csv
 
@@ -516,5 +543,18 @@ with open('transformer_prediction.csv', 'w', newline='') as file:
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
 
+# Output next-place predicted trajectory data as CSV
+csv_data_nextplace = []
+for uid in predictions_nextplace:
+    location = predictions_nextplace[uid].tolist()
+    time = predictions_time[uid][0]
+    location.extend([time, uid])
+    csv_data_nextplace.append(location)
+
+# Write data to CSV file
+with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['x', 'y', 't', 'uid']) 
+    writer.writerows(csv_data_nextplace)
+
 print("Predicted trajectories written to the csv file")
-'''
