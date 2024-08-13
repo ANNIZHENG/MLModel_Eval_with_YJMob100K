@@ -165,7 +165,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
     
     return avg_loss, avg_euclidean_distance, accuracy
-
+'''
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         print(f"Train Epoch {epoch+1}")
@@ -302,7 +302,6 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 print("Test")
 _, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
-''' Produce Output for Visualization
 # Output data to csv
 import csv
 
@@ -324,8 +323,7 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
 print("Predicted trajectories written to the csv file")
 '''
 
-''' Hyperparameter Tuning 
-
+# Hyperparameter Tuning 
 import optuna
 
 def objective(trial):
@@ -355,7 +353,7 @@ def objective(trial):
     model.to(device)
 
     # Assuming the dataloader and other training setup are ready
-    train_loss, avg_euclidean_distance, accuracy = train(model, test_dataloader, device, learning_rate)
+    _, avg_euclidean_distance, _ = train(model, test_dataloader, device, learning_rate)
 
     # Here we choose to minimize the average Euclidean distance, or you could maximize accuracy
     return avg_euclidean_distance
@@ -363,5 +361,4 @@ def objective(trial):
 study = optuna.create_study(direction='minimize', sampler=optuna.samplers.TPESampler())
 study.optimize(objective, n_trials=20)
 
-print("Best hyperparameters: ", study.best_params)
-'''
+print("\nBest hyperparameters: ", study.best_params)
