@@ -91,8 +91,6 @@ class PositionalEncoding(nn.Module):
             raise ValueError(f"Input sequence length ({x.size(1)}) is greater than the number of positional encodings available ({self.pe.size(0)})")
         x = x + self.pe[:x.size(1)].squeeze(1).expand_as(x)
         return self.dropout(x)
-    
-NUM_HEADS = 8
 
 class MultiHeadAttentionModule(nn.Module):
     def __init__(self, embed_dim, num_heads, dropout_rate):
@@ -311,12 +309,13 @@ def train_model(model, dataloader, device, epochs, learning_rate):
         print(f"Train Epoch {epoch+1}")
         train(model, dataloader, device, learning_rate)
 
-print("Start training process!")
+print("Start Training Process!")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
+# model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=64, num_layers=1, num_heads=4, device=device, forward_expansion=4, dropout_rate=0.0)
+model = Transformer(loc_size=40000, time_size_input=input_size, time_size_output=output_size, embed_dim=512, num_layers=16, num_heads=8, device=device, forward_expansion=4, dropout_rate=0.1)
 model.to(device)
-train_model(model, train_dataloader, device, epochs=8, learning_rate=0.001)
+train_model(model, train_dataloader, device, epochs=5, learning_rate=0.001)
 
 # Exapnd prediction to prepare to correspond to ground truth
 def expand_predictions(predicted_locs, predicted_times, max_time=47):
