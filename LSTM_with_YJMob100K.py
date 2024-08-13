@@ -9,9 +9,9 @@ from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
 # df_train = pd.read_csv('train.csv')
-df_test  = pd.read_csv('test_10.csv')
+df_test  = pd.read_csv('test.csv')
 df_train = df_test
-df_true_test = pd.read_csv('true_test_10.csv')
+df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
 input_size  = 192
