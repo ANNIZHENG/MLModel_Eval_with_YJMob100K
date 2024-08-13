@@ -220,6 +220,15 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
     correct_location = 0
 
     # Accuracy measure based on Euclidean Distance difference
+    # Next Place Prediction
+    euclidean_distance = math.sqrt((true_locs[0][0] - matched_locs[0][0])**2 + (true_locs[0][1] - matched_locs[0][1])**2)
+    total_distance += euclidean_distance
+    total_location += 1
+    if (euclidean_distance < threshold):
+        correct_location += 1
+
+    '''
+    # Next Sequence Prediction
     euclidean_distances = np.linalg.norm(true_locs - matched_locs, axis=1)
     total_distance += np.sum(euclidean_distances)
 
@@ -227,6 +236,7 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
         total_location += 1
         if (euclidean_distance < threshold):
             correct_location += 1
+    '''
     
     # avg_euclidean_distance = total_distance / total_location 
     # accuracy = correct_location / total_location
@@ -271,6 +281,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                 user_predictions_time.extend(label_positions[i].cpu().numpy())
             
             '''
+            # The Autoregressive Prediction witout assuming the predicted 48-time-step is uniform throughout the user movement
             # Set up for Autoregressive test
             current_input = inputs # the input locations
             current_label = predicted # the predicted locations
@@ -350,7 +361,7 @@ for uid in predictions:
         csv_data.append(location)
 
 # Write data to CSV file
-with open('lstm_prediction.csv', 'w', newline='') as file:
+with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
