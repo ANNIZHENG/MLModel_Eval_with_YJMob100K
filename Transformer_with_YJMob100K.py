@@ -105,6 +105,8 @@ model = TransformerModel(
 )
 model.to(device)
 
+print("PyTorch Built-in Transformer loaded!")
+
 def decode_token_to_cell(token_id, num_cells_per_row):
     cell_x = token_id % num_cells_per_row + 1
     cell_y = token_id // num_cells_per_row + 1 
@@ -165,7 +167,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     print(f"Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
     
     return avg_loss, avg_euclidean_distance, accuracy
-'''
+
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         print(f"Train Epoch {epoch+1}")
@@ -228,7 +230,20 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
     total_location = 0
     correct_location = 0
 
+    total_distance_nextplace = 0.0
+    total_location_nextplace = 0
+    correct_location_nextplace = 0
+
     # Accuracy measure based on Euclidean Distance difference
+    # Next Place Prediction
+    matched_locs_nextplace = matched_locs[0]
+    euclidean_distance_nextplace = math.sqrt((true_locs[0][0] - matched_locs_nextplace[0])**2 + (true_locs[0][1] - matched_locs_nextplace[1])**2)
+    total_distance_nextplace += euclidean_distance_nextplace
+    total_location_nextplace += 1
+    if (euclidean_distance_nextplace < threshold):
+        correct_location_nextplace += 1
+    
+    # Next Sequence Prediction
     euclidean_distances = np.linalg.norm(true_locs - matched_locs, axis=1)
     total_distance += np.sum(euclidean_distances)
 
@@ -241,7 +256,7 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
     # accuracy = correct_location / total_location
     # print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
 
-    return matched_locs, total_distance, total_location, correct_location
+    return matched_locs, total_distance, total_location, correct_location, matched_locs_nextplace, total_distance_nextplace, total_location_nextplace, correct_location_nextplace
 
 def recursive_inference_per_user(model, dataloader, device, true_data):
     # Measurement used for total accuracy calculation
@@ -249,10 +264,16 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
     total_locations = 0 # total num of location to be predicted
     correct_locations = 0 # total num of locations that are correctly predicted
 
+    total_distances_nextplace = 0.0
+    total_locations_nextplace = 0
+    correct_locations_nextplace = 0
+
     model.eval()
     
     predictions = {} # Store the 15-day predicted values per user
     predictions_time = {} # Store the corresponding 15-day time values per user
+
+    predictions_nextplace = {} 
     
     with torch.no_grad():
         for user_id, inputs, _, _, label_positions in dataloader: 
@@ -280,7 +301,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
                 user_predictions_time.extend(label_positions[i].cpu().numpy())
             
             # Measure accuracy for each user's prediction
-            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
+            matched_locs, total_distance, total_location, correct_location, matched_locs_nextplace, total_distance_nextplace, total_location_nextplace, correct_location_nextplace = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
 
             # Store predictions and times for the user
             predictions[user_id] = matched_locs
@@ -291,16 +312,24 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
             total_locations += total_location
             correct_locations += correct_location
 
+            total_distances_nextplace += total_distance_nextplace # next place prediction
+            total_locations_nextplace+= total_location_nextplace # next place prediction
+            correct_locations_nextplace += correct_location_nextplace # next place prediction
+
     avg_euclidean_distance = total_distances / total_locations
     accuracy = correct_locations / total_locations
 
-    print(f"Total Users' Adjusted Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+    avg_euclidean_distance_nextplace = total_distances_nextplace / total_locations_nextplace
+    accuracy_nextplace = correct_locations_nextplace / total_locations_nextplace
 
-    return avg_euclidean_distance, accuracy, predictions, predictions_time
+    print(f"Total Users' Adjusted Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+    print(f"Total Users' Adjusted Euclidean Distance Difference of Next-Place Prediction: {avg_euclidean_distance_nextplace:.4f}, Accuracy: {accuracy_nextplace:.4f}")
+
+    return avg_euclidean_distance, accuracy, predictions, predictions_time, predictions_nextplace
 
 # Autoregressive Inference
 print("Test")
-_, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+_, _, predictions, predictions_time, predictions_nextplace = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
 # Output data to csv
 import csv
@@ -320,8 +349,21 @@ with open('lstm_prediction.csv', 'w', newline='') as file:
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
 
+# Output next-place predicted trajectory data as CSV
+csv_data_nextplace = []
+for uid in predictions_nextplace:
+    location = predictions_nextplace[uid].tolist()
+    time = predictions_time[uid][0]
+    location.extend([time, uid])
+    csv_data_nextplace.append(location)
+
+# Write data to CSV file
+with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['x', 'y', 't', 'uid']) 
+    writer.writerows(csv_data_nextplace)
+
 print("Predicted trajectories written to the csv file")
-'''
 
 # Hyperparameter Tuning 
 import optuna
