@@ -9,9 +9,9 @@ from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
 # df_train = pd.read_csv('train.csv')
-df_test  = pd.read_csv('test.csv')
+df_test  = pd.read_csv('test_10.csv')
 df_train = df_test
-df_true_test = pd.read_csv('true_test.csv')
+df_true_test = pd.read_csv('true_test_10.csv')
 
 class TrajectoryDataset(Dataset):
     def __init__(self, all_data, input_size, output_size):
@@ -95,12 +95,12 @@ model = TransformerModel(
     loc_size=40000, 
     time_size_input=192, 
     time_size_output=48, 
-    embed_dim=512, 
-    nhead=8, 
-    num_encoder_layers=6, 
-    num_decoder_layers=6, 
-    dim_feedforward=2048, 
-    dropout=0.1, 
+    embed_dim=2048, 
+    nhead=8,
+    num_encoder_layers=16, # 8
+    num_decoder_layers=16, # 8
+    dim_feedforward=1024,
+    dropout=0.0,
     device=device
 )
 model.to(device)
@@ -174,3 +174,194 @@ def train_model(model, dataloader, device, epochs, learning_rate):
 print("Start Training Process!")
 
 train_model(model=model, dataloader=test_dataloader, device=device, epochs=5, learning_rate=0.001)
+
+# Exapnd prediction to prepare to correspond to ground truth
+def expand_predictions(predicted_locs, predicted_times, max_time=47):
+    expanded_locs = []
+    expanded_times = list(range(max_time + 1))
+    current_loc = predicted_locs[0]
+    loc_dict = dict(zip(predicted_times, predicted_locs))
+    for time in expanded_times: # for time in the 48 time indices
+        if time in loc_dict: # if time is predicted
+            # then use the prediction
+            current_loc = loc_dict[time] # then use the prediction
+        else: # if time is not predicted
+            # then use the previous/later prediction
+            found = False
+            if time > 0: # search the previous predictions
+                for j in range(time-1,-1,-1):
+                    prev_time = predicted_times[j]
+                    if prev_time in loc_dict:
+                        current_loc = loc_dict[prev_time]
+                        found = True
+                        break
+            if not found: # search the later predictions
+                for j in range(time+1, len(predicted_times)):
+                    next_time = predicted_times[j]
+                    if next_time in loc_dict:
+                        current_loc = loc_dict[next_time]
+                        found = True
+                        break
+            if not found: # last check
+                current_loc = predicted_locs[0]
+        expanded_locs.append(current_loc)
+    return expanded_locs, expanded_times
+
+def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_times):
+    expanded_locs, expanded_times = expand_predictions(predicted_locs, predicted_times)
+    matched_locs = []
+
+    # Select only the prediction with a corresponding ground truth
+    for true_time in true_times:
+        if true_time in expanded_times:
+            index = expanded_times.index(true_time)
+            matched_locs.append(expanded_locs[index])
+        else:
+            matched_locs.append(None)
+
+    # Convert prediction to (x,y) trajectory
+    matched_locs = np.array(decode_trajectory(matched_locs))
+
+    # Inference
+    threshold = 1+math.sqrt(2)
+    total_distance = 0.0
+    total_location = 0
+    correct_location = 0
+
+    # Accuracy measure based on Euclidean Distance difference
+    euclidean_distances = np.linalg.norm(true_locs - matched_locs, axis=1)
+    total_distance += np.sum(euclidean_distances)
+
+    for euclidean_distance in euclidean_distances:
+        total_location += 1
+        if (euclidean_distance < threshold):
+            correct_location += 1
+    
+    # avg_euclidean_distance = total_distance / total_location 
+    # accuracy = correct_location / total_location
+    # print(f"User ID: {user_id}, Average Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+
+    return matched_locs, total_distance, total_location, correct_location
+
+def recursive_inference_per_user(model, dataloader, device, true_data):
+    # Measurement used for total accuracy calculation
+    total_distances = 0.0 # total distance off
+    total_locations = 0 # total num of location to be predicted
+    correct_locations = 0 # total num of locations that are correctly predicted
+
+    model.eval()
+    
+    predictions = {} # Store the 15-day predicted values per user
+    predictions_time = {} # Store the corresponding 15-day time values per user
+    
+    with torch.no_grad():
+        for user_id, inputs, _, _, label_positions in dataloader: 
+
+            user_id = user_id.item()
+            inputs = inputs.to(device) # the location
+            label_positions = label_positions.to(device) # the time
+
+            # Ground Truth Data import
+            true_data_by_uid = true_data[true_data['uid']==user_id]
+            true_locs = np.array(list(zip(true_data_by_uid['x'], true_data_by_uid['y']))) # ground truth location
+            true_times = true_data_by_uid['t'].to_list() # ground truth time
+            num_predictions = len(true_data_by_uid) # number of needed prediction
+            
+            # Store predictions and times for the current user
+            user_predictions = []
+            user_predictions_time = []
+
+            # Initial Prediction
+            outputs = model(inputs) # Get the initial prediction on location
+            _, predicted = outputs.max(2)  # Get the index of the max log-probability
+
+            for i in range(inputs.size(0)):
+                user_predictions.extend(predicted[i].cpu().numpy())
+                user_predictions_time.extend(label_positions[i].cpu().numpy())
+            
+            # Measure accuracy for each user's prediction
+            matched_locs, total_distance, total_location, correct_location = accuracy_measure(user_id, user_predictions, user_predictions_time, true_locs, true_times)
+
+            # Store predictions and times for the user
+            predictions[user_id] = matched_locs
+            predictions_time[user_id] = true_times
+
+            # Record the total distance
+            total_distances += total_distance
+            total_locations += total_location
+            correct_locations += correct_location
+
+    avg_euclidean_distance = total_distances / total_locations
+    accuracy = correct_locations / total_locations
+
+    print(f"Total Users' Adjusted Euclidean Distance Difference: {avg_euclidean_distance:.4f}, Accuracy: {accuracy:.4f}")
+
+    return avg_euclidean_distance, accuracy, predictions, predictions_time
+
+# Autoregressive Inference
+print("Test")
+_, _, predictions, predictions_time = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
+
+''' Produce Output for Visualization
+# Output data to csv
+import csv
+
+# Output predicted trajectory data as CSV
+csv_data = []
+for uid in predictions:
+    locations = predictions[uid].tolist()
+    times = predictions_time[uid]
+    for time, location in zip(times, locations):
+        location.extend([time, uid])
+        csv_data.append(location)
+
+# Write data to CSV file
+with open('lstm_prediction.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['x', 'y', 't', 'uid']) 
+    writer.writerows(csv_data)
+
+print("Predicted trajectories written to the csv file")
+'''
+
+''' Hyperparameter Tuning 
+
+import optuna
+
+def objective(trial):
+    # Hyperparameters to tune
+    # embed_dim = trial.suggest_categorical('embed_dim', [256, 512, 1024, 2048])
+    embed_dim = 2048
+    nhead = trial.suggest_categorical('nhead', [8, 16])
+    num_layers = trial.suggest_categorical('num_layers', [4, 8, 16])
+    dim_feedforward = trial.suggest_categorical('dim_feedforward', [512, 1024, 2048])
+    dropout = trial.suggest_float('dropout', 0.0, 0.1)
+    # learning_rate = trial.suggest_loguniform('learning_rate', 0.0005, 0.001)
+    learning_rate = 0.001
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = TransformerModel(
+        loc_size=40000,
+        time_size_input=192,
+        time_size_output=48,
+        embed_dim=embed_dim,
+        nhead=nhead,
+        num_encoder_layers=num_layers,
+        num_decoder_layers=num_layers,
+        dim_feedforward=dim_feedforward,
+        dropout=dropout,
+        device=device
+    )
+    model.to(device)
+
+    # Assuming the dataloader and other training setup are ready
+    train_loss, avg_euclidean_distance, accuracy = train(model, test_dataloader, device, learning_rate)
+
+    # Here we choose to minimize the average Euclidean distance, or you could maximize accuracy
+    return avg_euclidean_distance
+
+study = optuna.create_study(direction='minimize', sampler=optuna.samplers.TPESampler())
+study.optimize(objective, n_trials=20)
+
+print("Best hyperparameters: ", study.best_params)
+'''
