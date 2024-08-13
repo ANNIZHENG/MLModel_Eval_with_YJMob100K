@@ -542,6 +542,7 @@ with open('transformer_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
+
 '''
 # Output next-place predicted trajectory data as CSV
 csv_data_nextplace = []
@@ -556,6 +557,5 @@ with open('transformer_prediction_nextplace.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data_nextplace)
-
-print("Predicted trajectories written to the csv file")
 '''
+print("Predicted trajectories written to the csv file")
