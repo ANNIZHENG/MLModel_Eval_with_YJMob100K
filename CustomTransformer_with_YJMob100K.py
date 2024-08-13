@@ -8,13 +8,13 @@ from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
 # Load data with users from yjmob1
-# df_train = pd.read_csv('train.csv')
+df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
-df_train = df_test 
+# df_train = df_test 
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
-input_size  = 48*4
+input_size  = 192
 output_size = 48 
 
 class TrajectoryDataset(Dataset):
@@ -524,7 +524,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 # Autoregressive Inference
 print("Test")
 _, _, predictions, predictions_time, predictions_nextplace = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
-'''
+
 # Output data to csv
 import csv
 
@@ -542,7 +542,7 @@ with open('transformer_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
-
+'''
 # Output next-place predicted trajectory data as CSV
 csv_data_nextplace = []
 for uid in predictions_nextplace:
