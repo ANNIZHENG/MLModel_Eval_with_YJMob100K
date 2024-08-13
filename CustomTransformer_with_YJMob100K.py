@@ -21,7 +21,7 @@ class TrajectoryDataset(Dataset):
     def __init__(self, all_data, input_size, output_size):
         self.data = []
         window_size = input_size + output_size
-        for i in range(0, len(all_data)-window_size+1, int(window_size/4)):
+        for i in range(0, len(all_data)-window_size+1, int(window_size/2)):
             uid = all_data.iloc[i]['uid']
             xy = all_data.iloc[i:i+window_size]['combined_xy'].tolist()
             t = all_data.iloc[i:i+window_size]['t'].tolist()
