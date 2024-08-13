@@ -14,7 +14,7 @@ df_train = df_test
 df_true_test = pd.read_csv('true_test.csv')
 
 # Adjust input and output size here
-input_size  = 48*6
+input_size  = 48*4
 output_size = 48 
 
 class TrajectoryDataset(Dataset):
