@@ -9,6 +9,7 @@
 |-- LSTM_with_YJmob100K.py              # Built-in LSTM
 |-- README.md
 |-- Transformer_with_YJMob100K.py       # Built-in Transformer
+|-- Visualization.ipynb                 # Image visualizaitons for final presentation
 |-- input_data_processing.ipynb         # Notebook file for Data Processing
 ```
 
