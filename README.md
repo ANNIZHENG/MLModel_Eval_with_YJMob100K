@@ -20,7 +20,7 @@ python Baseline.py
 
 ### 1. Sign into NYU HPC: https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
 
-### 2. Clone this repository
+### 2. Clone Repository
 
 ```
 git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
@@ -32,54 +32,35 @@ git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
 srun -t 2:00:00 -c 4 --mem=16000 --gres=gpu:1 --pty /bin/bash
 ```
 
-### 4. Load CUDA and Python3 packages
+### 4. Check CUDA and Python Availability (Optional)
 
-Check CUDA availabiilty
 ```
 module spider cuda
-```
-
-Load CUDA
-```
-module load cuda/11.6.2
-```
-
-Check Python availability
-
-```
 module spider python
 ```
 
-Load Python
+### 5. Load necessary packages
 
 ```
+module load cuda/11.6.2
 module load python/intel/3.8.6
 ```
 
-### 5. Set Up and Activate Virtual Environment: 
-
-Create Virtual Environment
+### 6. Set up Virtual Environment (Optional)
 
 ```
 virtualenv --system-site-packages -p python3 ./venv
+pip install torch
 ```
 
-Activate Virtual Environment
+### 7. Activate Virtual Environment
 
 ```
 source ./venv/bin/activate
 ```
 
-### 6. If not already, install PyTorch
+## 8. Run Files
 
 ```
-pip install torch
-```
-
-## Run Files (Model Training and Testing)
-
-```
-python CustomTransformer_with_YJMob100K.py 
-python LSTM_with_YJMob100K.py
-python Baseline.py
+python <FILE_NAME>.py
 ```
