@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+# Function used to decode grid-id to (x,y) format
 def decode_token_to_cell(token_id, num_cells_per_row):
     cell_x = token_id % num_cells_per_row + 1
     cell_y = token_id // num_cells_per_row + 1 

@@ -7,20 +7,30 @@ from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torch.nn.utils.rnn import pad_sequence
 
-# Load data with users from yjmob1
+# Load Data
 # df_train = pd.read_csv('train.csv')
 df_test  = pd.read_csv('test.csv')
 df_train = df_test
 df_true_test = pd.read_csv('true_test.csv')
 
+# Adjust input and output size here
+input_size  = 192
+output_size = 48
+
+# Prepare Dataset as Model Input
 class TrajectoryDataset(Dataset):
     def __init__(self, all_data, input_size, output_size):
         self.data = []
+
+        # Window would partition one Trajectory
         window_size = input_size + output_size
+
+        # The Dataset would store one Trajectory data
+        # Trajectory: 48*4 input data, 48*4 corresponding time-step, 48 output data, 48 corresponding time-step
         for i in range(0, len(all_data)-window_size+1, window_size):
-            uid = all_data.iloc[i]['uid']
-            xy = all_data.iloc[i:i+window_size]['combined_xy'].tolist()
-            t = all_data.iloc[i:i+window_size]['t'].tolist()
+            uid = all_data.iloc[i]['uid'] # Extract User Id
+            xy = all_data.iloc[i:i+window_size]['combined_xy'].tolist() # Extract Grid-Location
+            t = all_data.iloc[i:i+window_size]['t'].tolist() # Extract Time
             self.data.append((uid, xy[:input_size], xy[input_size:], t[:input_size], t[input_size:]))
 
     def __len__(self):
@@ -30,16 +40,14 @@ class TrajectoryDataset(Dataset):
         user_id, inputs, labels, positions, label_positions = self.data[idx]
         return torch.tensor(user_id), torch.tensor(inputs), torch.tensor(labels), torch.tensor(positions), torch.tensor(label_positions)
 
-# Adjust input and output size here
-input_size  = 192
-output_size = 48
-
+# Create Dataset
 train_dataset = TrajectoryDataset(df_train, input_size, output_size)
 test_dataset = TrajectoryDataset(df_test, input_size, output_size)
 
+# The Sampler is used to Aggregate Trajectory of the Same User into the Same Batch
 class UserGroupSampler(Sampler):
     def __init__(self, dataset):
-        self.indices_by_user = {}
+        self.indices_by_user = {} # use dictionary to store info
         for idx in range(len(dataset)):
             uid, _, _, _, _ = dataset[idx]
             uid = uid.item()
@@ -54,25 +62,24 @@ class UserGroupSampler(Sampler):
     def __len__(self):
         return len(self.indices_by_user)
 
+# Aggregation Function for Making Sure All Trajectories are in the Same Length in One Batch
 def collate_fn(batch):
     user_ids, inputs_batch, labels_batch, positions_batch, label_positions_batch = zip(*batch)
     inputs_padded = pad_sequence(inputs_batch, batch_first=True, padding_value=0)
     labels_padded = pad_sequence(labels_batch, batch_first=True, padding_value=0)
     positions_padded = pad_sequence(positions_batch, batch_first=True, padding_value=0)
     label_positions_padded = pad_sequence(label_positions_batch, batch_first=True, padding_value=0)
-    ## return user_ids, inputs_padded, labels_padded, positions_padded, label_positions_padded
     return user_ids[0].clone().detach(), inputs_padded, labels_padded, positions_padded, label_positions_padded
 
+# Create Sampler and DataLoader
 train_sampler = UserGroupSampler(train_dataset) # group data of the same user id on the same batch
 train_dataloader = DataLoader(train_dataset, batch_sampler=train_sampler, collate_fn=collate_fn)
-
 test_sampler = UserGroupSampler(test_dataset)
 test_dataloader = DataLoader(test_dataset, batch_sampler=test_sampler, collate_fn=collate_fn)
 
 print("Training data and Testing data loaded!")
 
-# Assuming the same DataLoader setup and Dataset class as before
-
+# Load Built-In Transformer
 class TransformerModel(nn.Module):
     def __init__(self, loc_size, time_size_input, time_size_output, embed_dim, nhead, num_encoder_layers, num_decoder_layers, dim_feedforward, dropout, device):
         super(TransformerModel, self).__init__()
@@ -89,7 +96,7 @@ class TransformerModel(nn.Module):
         output = self.transformer(src_emb, trg_emb)
         return self.fc_out(output)
 
-# Instantiate and use the model
+# Instantiate the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = TransformerModel(
     loc_size=40000, 
@@ -107,18 +114,21 @@ model.to(device)
 
 print("PyTorch Built-in Transformer loaded!")
 
+# Function used to decode grid-id to (x,y) format
 def decode_token_to_cell(token_id, num_cells_per_row):
     cell_x = token_id % num_cells_per_row + 1
     cell_y = token_id // num_cells_per_row + 1 
     return cell_x, cell_y
 
+# Function used to decode the whole trajectory (a sequence of grid-ids)
 def decode_trajectory(traj, num_cells_per_row=200):
     decoded_traj = [decode_token_to_cell(token_id, num_cells_per_row) for token_id in traj]
     return decoded_traj
 
+# Model Training Set-up
 def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     model.train()
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss() # Classification Task
     optimizer = Adam(model.parameters(), lr=learning_rate)
     
     total_loss = 0.0
@@ -168,6 +178,7 @@ def train(model, dataloader, device, learning_rate, threshold=(1+math.sqrt(2))):
     
     return avg_loss, avg_euclidean_distance, accuracy
 
+# Training Set-up (with Epochs)
 def train_model(model, dataloader, device, epochs, learning_rate):
     for epoch in range(epochs):
         print(f"Train Epoch {epoch+1}")
@@ -209,6 +220,7 @@ def expand_predictions(predicted_locs, predicted_times, max_time=47):
         expanded_locs.append(current_loc)
     return expanded_locs, expanded_times
 
+# Measure whether the predicted location falls within threshold
 def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_times):
     expanded_locs, expanded_times = expand_predictions(predicted_locs, predicted_times)
     matched_locs = []
@@ -258,6 +270,9 @@ def accuracy_measure(user_id, predicted_locs, predicted_times, true_locs, true_t
 
     return matched_locs, total_distance, total_location, correct_location, matched_locs_nextplace, total_distance_nextplace, total_location_nextplace, correct_location_nextplace
 
+# Inference part
+# Currentl doing Prediction assuming user would follow the predicted 48 step trajectory throughout 15 days
+# You may comment out the Autoregressive part, if the above way is not preferred
 def recursive_inference_per_user(model, dataloader, device, true_data):
     # Measurement used for total accuracy calculation
     total_distances = 0.0 # total distance off
@@ -327,7 +342,7 @@ def recursive_inference_per_user(model, dataloader, device, true_data):
 
     return avg_euclidean_distance, accuracy, predictions, predictions_time, predictions_nextplace
 
-# Autoregressive Inference
+# Inference
 print("Test")
 _, _, predictions, predictions_time, predictions_nextplace = recursive_inference_per_user(model, test_dataloader, device, df_true_test)
 
@@ -365,7 +380,7 @@ with open('lstm_prediction_nextplace.csv', 'w', newline='') as file:
 
 print("Predicted trajectories written to the csv file")
 
-# Hyperparameter Tuning 
+# Hyperparameter Tuning (if needed)
 import optuna
 
 def objective(trial):
