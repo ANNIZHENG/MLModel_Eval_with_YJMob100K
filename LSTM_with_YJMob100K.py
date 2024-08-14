@@ -380,7 +380,7 @@ for uid in predictions:
         csv_data.append(location)
 
 # Write data to CSV file
-with open('lstm_prediction_testonly.csv', 'w', newline='') as file:
+with open('lstm_prediction.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['x', 'y', 't', 'uid']) 
     writer.writerows(csv_data)
