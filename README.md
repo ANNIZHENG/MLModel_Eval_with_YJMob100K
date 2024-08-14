@@ -26,10 +26,10 @@ python Baseline.py
 git clone https://github.com/ANNIZHENG/MLModel_Eval_with_YJMob100K.git
 ```
 
-### 3. Request resourses (2 hour, 4 cores, 4 GPU)
+### 3. Request resourses (2 hour, 4 cores, 1 GPU)
 
 ```
-srun -t 2:00:00 -c 4 --mem=16000 --gres=gpu:4 --pty /bin/bash
+srun -t 2:00:00 -c 4 --mem=16000 --gres=gpu:1 --pty /bin/bash
 ```
 
 ### 4. Load CUDA and Python3 packages
