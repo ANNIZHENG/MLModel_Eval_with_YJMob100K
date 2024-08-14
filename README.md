@@ -3,11 +3,12 @@
 ## Organization
 
 ```
-|-- Baseline.py                         # Baseline model (haven't fixed the train-test split yet)
-|-- CustomTransformer_with_YJMob100K.py # Created a custom Transformer for training YJMob100K data
+|-- Baseline.py                         # A Visit Frequency-based Predictive Model
+|-- CustomTransformer_with_YJMob100K.py # Custom Transformer
 |-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
-|-- LSTM_with_YJmob100K.py              # Created a built-in LSTM for training YJMob100K data
+|-- LSTM_with_YJmob100K.py              # Built-in LSTM
 |-- README.md
+|-- Transformer_with_YJMob100K.py       # Built-in Transformer
 ```
 
 ## Run Baseline
