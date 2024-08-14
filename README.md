@@ -18,7 +18,9 @@ python Baseline.py
 
 ## Environment Set-Up (for Running LSTM and Transformer)
 
-### 1. Sign into NYU HPC: https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
+### 1. Sign into NYU HPC: 
+
+https://sites.google.com/nyu.edu/nyu-hpc/accessing-hpc
 
 ### 2. Clone Repository
 
@@ -59,7 +61,7 @@ pip install torch
 source ./venv/bin/activate
 ```
 
-## 8. Run Files
+### 8. Run Files
 
 ```
 python <FILE_NAME>.py
