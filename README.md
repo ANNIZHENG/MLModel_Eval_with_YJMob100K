@@ -51,7 +51,7 @@ module load cuda/11.6.2
 module load python/intel/3.8.6
 ```
 
-### 6. Set up Virtual Environment (Optional)
+### 6. Set up Virtual Environment
 
 ```
 virtualenv --system-site-packages -p python3 ./venv
