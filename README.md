@@ -3,9 +3,9 @@
 ## Organization
 
 ```
+|-- Analysis.ipynb                      # Some Data Analysis Done
 |-- Baseline.py                         # A Visit Frequency-based Predictive Model
 |-- CustomTransformer_with_YJMob100K.py # Custom Transformer
-|-- DataAnalysis_POI.ipynb              # Jupyter Notebook file for POI data analysis
 |-- LSTM_with_YJmob100K.py              # Built-in LSTM
 |-- README.md
 |-- Transformer_with_YJMob100K.py       # Built-in Transformer
